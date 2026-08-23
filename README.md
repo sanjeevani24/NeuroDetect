@@ -125,12 +125,15 @@ Main game tables:
 
 - `patients`
 - `assessments`
+- `phq9_results`
+- `gad7_results`
 - `mmse_results`
 - `memory_results`
 - `nback_results`
 - `boston_naming_results`
 - `trail_making_results`
 - `trail_making_events`
+- `model1_results`
 
 ## API endpoints
 

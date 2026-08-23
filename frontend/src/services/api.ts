@@ -75,6 +75,63 @@ export interface MentalHealthCompletionResult {
   gad7: MentalHealthScore;
 }
 
+export interface Model1PredictionResult {
+  assessment_id: string;
+  model: string;
+  model_version: string;
+  cognitive_performance_score: number;
+  status: "success" | "existing";
+}
+
+export interface ResultChecklistItem {
+  key: string;
+  label: string;
+  completed: boolean;
+}
+
+export interface ResultsModel1Summary {
+  available: boolean;
+  cognitive_performance_score: number | null;
+  model_name: string | null;
+  model_version: string | null;
+  feature_count: number | null;
+  model_type: string | null;
+  score_scale_max: number | null;
+}
+
+export interface ScreeningScoreSummary {
+  available: boolean;
+  score: number | null;
+  score_max: number;
+  severity: string | null;
+}
+
+export interface PendingModuleSummary {
+  available: false;
+  status: "pending";
+  title: string;
+  description: string;
+}
+
+export interface AssessmentResults {
+  assessment_id: string;
+  assessment_short_id: string;
+  participant_name: string;
+  status: "completed" | "incomplete" | "awaiting_model1";
+  current_stage: AssessmentSession["current_stage"];
+  next_stage: AssessmentSession["current_stage"];
+  completion_message: string;
+  model1: ResultsModel1Summary;
+  mental_health: {
+    phq9: ScreeningScoreSummary;
+    gad7: ScreeningScoreSummary;
+  };
+  model3: PendingModuleSummary;
+  fusion: PendingModuleSummary;
+  completed_components: ResultChecklistItem[];
+  missing_components: string[];
+}
+
 export interface MemoryCompletionPayload {
   events: MemoryEvent[];
   confidence: Required<ConfidenceRatings>;
@@ -380,4 +437,17 @@ export function completeTrailMakingGame(
       body: JSON.stringify(payload),
     }
   );
+}
+
+export function predictModel1(assessmentId: string): Promise<Model1PredictionResult> {
+  return requestJson<Model1PredictionResult>(
+    `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/model1/predict`,
+    {
+      method: "POST",
+    }
+  );
+}
+
+export function getAssessmentResults(assessmentId: string): Promise<AssessmentResults> {
+  return requestJson<AssessmentResults>(`${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/results`);
 }

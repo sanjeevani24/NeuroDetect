@@ -119,7 +119,7 @@ class AssessmentRepository:
             return "BOSTON_NAMING"
         if "TRAIL_MAKING" not in completed_stages:
             return "TRAIL_MAKING"
-        return "SPEECH"
+        return "RESULTS"
 
     def _table_has_assessment(self, table_name: str, assessment_id: str) -> bool:
         row = self._single_row_or_none(
