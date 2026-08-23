@@ -6,8 +6,17 @@ create extension if not exists "pgcrypto";
 
 create table if not exists patients (
     patient_id uuid primary key default gen_random_uuid(),
+    full_name text,
+    age integer,
+    sex text,
+    education_years integer,
     created_at timestamptz not null default now()
 );
+
+alter table patients add column if not exists full_name text;
+alter table patients add column if not exists age integer;
+alter table patients add column if not exists sex text;
+alter table patients add column if not exists education_years integer;
 
 create table if not exists assessments (
     assessment_id uuid primary key default gen_random_uuid(),
@@ -110,3 +119,41 @@ create index if not exists idx_trail_making_events_game_session_id
 on trail_making_events (game_session_id);
 create index if not exists idx_trail_making_events_event_type
 on trail_making_events (event_type);
+
+create table if not exists phq9_results (
+    phq9_id uuid primary key default gen_random_uuid(),
+    assessment_id uuid not null references assessments (assessment_id) on delete cascade,
+    q1 integer not null check (q1 between 0 and 3),
+    q2 integer not null check (q2 between 0 and 3),
+    q3 integer not null check (q3 between 0 and 3),
+    q4 integer not null check (q4 between 0 and 3),
+    q5 integer not null check (q5 between 0 and 3),
+    q6 integer not null check (q6 between 0 and 3),
+    q7 integer not null check (q7 between 0 and 3),
+    q8 integer not null check (q8 between 0 and 3),
+    q9 integer not null check (q9 between 0 and 3),
+    total_score integer not null check (total_score between 0 and 27),
+    severity text not null,
+    created_at timestamptz not null default now(),
+    constraint phq9_results_assessment_id_unique unique (assessment_id)
+);
+
+create index if not exists idx_phq9_results_assessment_id on phq9_results (assessment_id);
+
+create table if not exists gad7_results (
+    gad7_id uuid primary key default gen_random_uuid(),
+    assessment_id uuid not null references assessments (assessment_id) on delete cascade,
+    q1 integer not null check (q1 between 0 and 3),
+    q2 integer not null check (q2 between 0 and 3),
+    q3 integer not null check (q3 between 0 and 3),
+    q4 integer not null check (q4 between 0 and 3),
+    q5 integer not null check (q5 between 0 and 3),
+    q6 integer not null check (q6 between 0 and 3),
+    q7 integer not null check (q7 between 0 and 3),
+    total_score integer not null check (total_score between 0 and 21),
+    severity text not null,
+    created_at timestamptz not null default now(),
+    constraint gad7_results_assessment_id_unique unique (assessment_id)
+);
+
+create index if not exists idx_gad7_results_assessment_id on gad7_results (assessment_id);

@@ -1,8 +1,8 @@
+import type { BostonNamingTelemetryEvent } from "../games/boston-naming/telemetry/bostonNamingEvents";
 import type { MemoryEvent } from "../games/memory/telemetry/eventTypes";
 import type { ConfidenceRatings } from "../games/memory/types/memoryTypes";
 import type { MMSEEvent } from "../games/mmse/telemetry/mmseEvents";
 import type { NBackTelemetryEvent } from "../games/nback/telemetry/nbackEvents";
-import type { BostonNamingTelemetryEvent } from "../games/boston-naming/telemetry/bostonNamingEvents";
 import type { TrailMakingTelemetryEvent, TrailNodeLayout } from "../games/trail-making/types/trailMakingTypes";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
@@ -10,6 +10,69 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000
 export interface AssessmentSession {
   patient_id: string;
   assessment_id: string;
+  full_name: string;
+  age: number;
+  sex: string;
+  education_years: number;
+  current_stage:
+    | "PATIENT_INFO"
+    | "PHQ_GAD"
+    | "COGNITIVE"
+    | "MMSE"
+    | "MEMORY"
+    | "NBACK"
+    | "BOSTON_NAMING"
+    | "TRAIL_MAKING"
+    | "SPEECH"
+    | "RESULTS";
+  completed_stages: string[];
+}
+
+export interface CreateAssessmentSessionPayload {
+  full_name: string;
+  age: number;
+  sex: string;
+  education_years: number;
+}
+
+export interface PHQ9Answers {
+  q1: number;
+  q2: number;
+  q3: number;
+  q4: number;
+  q5: number;
+  q6: number;
+  q7: number;
+  q8: number;
+  q9: number;
+}
+
+export interface GAD7Answers {
+  q1: number;
+  q2: number;
+  q3: number;
+  q4: number;
+  q5: number;
+  q6: number;
+  q7: number;
+}
+
+export interface MentalHealthCompletionPayload {
+  phq9: PHQ9Answers;
+  gad7: GAD7Answers;
+}
+
+export interface MentalHealthScore {
+  total_score: number;
+  severity: string;
+  evaluation_cutoff_met: boolean;
+}
+
+export interface MentalHealthCompletionResult {
+  assessment_id: string;
+  status: "completed" | "already_completed";
+  phq9: MentalHealthScore;
+  gad7: MentalHealthScore;
 }
 
 export interface MemoryCompletionPayload {
@@ -194,20 +257,7 @@ export class ApiError extends Error {
   }
 }
 
-export async function createAssessmentSession(): Promise<AssessmentSession> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_BASE_URL}/api/assessments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    throw new ApiError(
-      0,
-      "Could not reach the NeuroDetect API. Confirm the FastAPI server is running and VITE_API_BASE_URL is correct."
-    );
-  }
-
+async function parseApiResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     let detail: unknown = null;
     try {
@@ -222,182 +272,112 @@ export async function createAssessmentSession(): Promise<AssessmentSession> {
   return response.json();
 }
 
-/**
- * The frontend API service does not know how features are calculated — it
- * only sends raw telemetry + confidence and returns whatever the backend
- * computed and persisted.
- */
-export async function completeMemoryGame(
+async function requestJson<T>(input: string, init?: RequestInit): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(input, init);
+  } catch {
+    throw new ApiError(
+      0,
+      "Could not reach the NeuroDetect API. Confirm the FastAPI server is running and VITE_API_BASE_URL is correct."
+    );
+  }
+
+  return parseApiResponse<T>(response);
+}
+
+export function createAssessmentSession(payload: CreateAssessmentSessionPayload): Promise<AssessmentSession> {
+  return requestJson<AssessmentSession>(`${API_BASE_URL}/api/assessments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getAssessmentSession(assessmentId: string): Promise<AssessmentSession> {
+  return requestJson<AssessmentSession>(`${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}`);
+}
+
+export function completeMentalHealthScreening(
+  assessmentId: string,
+  payload: MentalHealthCompletionPayload
+): Promise<MentalHealthCompletionResult> {
+  return requestJson<MentalHealthCompletionResult>(
+    `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/mental-health/complete`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
+export function completeMemoryGame(
   assessmentId: string,
   payload: MemoryCompletionPayload
 ): Promise<MemoryGameResult> {
-  let response: Response;
-  try {
-    response = await fetch(
-      `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/games/memory/complete`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
-  } catch (error) {
-    throw new ApiError(
-      0,
-      "Could not reach the NeuroDetect API. Confirm the FastAPI server is running and VITE_API_BASE_URL is correct."
-    );
-  }
-
-  if (!response.ok) {
-    let detail: unknown = null;
-    try {
-      const body = await response.json();
-      detail = body.detail ?? body;
-    } catch {
-      detail = await response.text();
+  return requestJson<MemoryGameResult>(
+    `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/games/memory/complete`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     }
-    throw new ApiError(response.status, detail);
-  }
-
-  return response.json();
+  );
 }
 
-export async function completeMMSEGame(
+export function completeMMSEGame(
   assessmentId: string,
   payload: MMSECompletionPayload
 ): Promise<MMSEGameResult> {
-  let response: Response;
-  try {
-    response = await fetch(
-      `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/games/mmse/complete`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
-  } catch (error) {
-    throw new ApiError(
-      0,
-      "Could not reach the NeuroDetect API. Confirm the FastAPI server is running and VITE_API_BASE_URL is correct."
-    );
-  }
-
-  if (!response.ok) {
-    let detail: unknown = null;
-    try {
-      const body = await response.json();
-      detail = body.detail ?? body;
-    } catch {
-      detail = await response.text();
+  return requestJson<MMSEGameResult>(
+    `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/games/mmse/complete`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     }
-    throw new ApiError(response.status, detail);
-  }
-
-  return response.json();
+  );
 }
 
-export async function completeNBackGame(
+export function completeNBackGame(
   assessmentId: string,
   payload: NBackCompletionPayload
 ): Promise<NBackGameResult> {
-  let response: Response;
-  try {
-    response = await fetch(
-      `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/games/nback/complete`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
-  } catch (error) {
-    throw new ApiError(
-      0,
-      "Could not reach the NeuroDetect API. Confirm the FastAPI server is running and VITE_API_BASE_URL is correct."
-    );
-  }
-
-  if (!response.ok) {
-    let detail: unknown = null;
-    try {
-      const body = await response.json();
-      detail = body.detail ?? body;
-    } catch {
-      detail = await response.text();
+  return requestJson<NBackGameResult>(
+    `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/games/nback/complete`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     }
-    throw new ApiError(response.status, detail);
-  }
-
-  return response.json();
+  );
 }
 
-export async function completeBostonNamingGame(
+export function completeBostonNamingGame(
   assessmentId: string,
   payload: BostonNamingCompletionPayload
 ): Promise<BostonNamingGameResult> {
-  let response: Response;
-  try {
-    response = await fetch(
-      `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/games/boston-naming/complete`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
-  } catch (error) {
-    throw new ApiError(
-      0,
-      "Could not reach the NeuroDetect API. Confirm the FastAPI server is running and VITE_API_BASE_URL is correct."
-    );
-  }
-
-  if (!response.ok) {
-    let detail: unknown = null;
-    try {
-      const body = await response.json();
-      detail = body.detail ?? body;
-    } catch {
-      detail = await response.text();
+  return requestJson<BostonNamingGameResult>(
+    `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/games/boston-naming/complete`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     }
-    throw new ApiError(response.status, detail);
-  }
-
-  return response.json();
+  );
 }
 
-export async function completeTrailMakingGame(
+export function completeTrailMakingGame(
   assessmentId: string,
   payload: TrailMakingCompletionPayload
 ): Promise<TrailMakingGameResult> {
-  let response: Response;
-  try {
-    response = await fetch(
-      `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/games/trail-making/complete`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
-  } catch (error) {
-    throw new ApiError(
-      0,
-      "Could not reach the NeuroDetect API. Confirm the FastAPI server is running and VITE_API_BASE_URL is correct."
-    );
-  }
-
-  if (!response.ok) {
-    let detail: unknown = null;
-    try {
-      const body = await response.json();
-      detail = body.detail ?? body;
-    } catch {
-      detail = await response.text();
+  return requestJson<TrailMakingGameResult>(
+    `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/games/trail-making/complete`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     }
-    throw new ApiError(response.status, detail);
-  }
-
-  return response.json();
+  );
 }
