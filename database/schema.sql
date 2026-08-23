@@ -157,3 +157,16 @@ create table if not exists gad7_results (
 );
 
 create index if not exists idx_gad7_results_assessment_id on gad7_results (assessment_id);
+
+create table if not exists model1_results (
+    model1_id uuid primary key default gen_random_uuid(),
+    assessment_id uuid not null references assessments (assessment_id) on delete cascade,
+    cognitive_performance_score double precision not null,
+    model_name text not null,
+    model_version text not null,
+    feature_vector jsonb not null,
+    created_at timestamptz not null default now(),
+    constraint model1_results_assessment_unique unique (assessment_id)
+);
+
+create index if not exists idx_model1_results_assessment_id on model1_results (assessment_id);

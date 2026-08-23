@@ -10,10 +10,13 @@ import { MMSEGame } from "./games/mmse/MMSEGame";
 import { NBackGame } from "./games/nback/NBackGame";
 import { TrailMakingGame } from "./games/trail-making/TrailMakingGame";
 import {
+  getAssessmentResults,
   ApiError,
   completeMentalHealthScreening,
   createAssessmentSession,
   getAssessmentSession,
+  predictModel1,
+  type AssessmentResults,
   type AssessmentSession,
   type GAD7Answers,
   type MentalHealthCompletionResult,
@@ -27,7 +30,6 @@ const UUID_PATTERN =
 const TOP_LEVEL_STEPS: AssessmentProgressStep[] = [
   { id: "mental-health", label: "Mental Health" },
   { id: "cognitive", label: "Cognitive Assessment" },
-  { id: "speech", label: "Speech Assessment" },
   { id: "results", label: "Results" },
 ];
 
@@ -126,6 +128,25 @@ interface CognitiveOverviewProps {
   onStartNew: () => void;
 }
 
+function formatSeverityLabel(value: string | null | undefined): string {
+  if (!value) return "Unavailable";
+  return value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part[0].toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function formatAssessmentError(error: unknown, fallback: string): string {
+  if (error instanceof ApiError) {
+    if (error.status === 400 || error.status === 404) {
+      return "Assessment not found.";
+    }
+    return typeof error.detail === "string" ? error.detail : fallback;
+  }
+  return fallback;
+}
+
 function parseRoute(pathname: string): Route {
   const trimmed = pathname.replace(/\/+$/, "") || "/";
   if (trimmed === "/") return { kind: "home" };
@@ -200,9 +221,6 @@ function normalizeCompletedStages(session: AssessmentSession | null): string[] {
   ) {
     completed.add("cognitive");
   }
-  if (session.current_stage === "RESULTS") {
-    completed.add("speech");
-  }
   return [...completed];
 }
 
@@ -215,8 +233,6 @@ function getTopLevelCurrentStage(route: Route): string {
     case "boston-naming":
     case "trail-making":
       return "cognitive";
-    case "speech":
-      return "speech";
     case "results":
       return "results";
     default:
@@ -229,7 +245,7 @@ function getHeaderCopy(route: Route): { title: string; subtitle: string } {
     case "home":
       return {
         title: "AI-Assisted Multimodal Cognitive Assessment",
-        subtitle: "A structured assessment combining mental-health screening, cognitive tasks, and speech-based analysis.",
+        subtitle: "A structured assessment combining mental-health screening and cognitive tasks in one research-oriented flow.",
       };
     case "patient":
       return {
@@ -246,15 +262,10 @@ function getHeaderCopy(route: Route): { title: string; subtitle: string } {
         title: "Cognitive Assessment Overview",
         subtitle: "The existing cognitive assessment page, preserved and moved after PHQ-9 and GAD-7.",
       };
-    case "speech":
-      return {
-        title: "Speech Assessment",
-        subtitle: "Continue the same assessment session into the speech stage using the existing assessment ID.",
-      };
     case "results":
       return {
         title: "Final Results",
-        subtitle: "Assessment outputs are gathered here before the later fusion layer combines them.",
+        subtitle: "Cognitive performance scoring is generated from the completed cognitive tasks on the same assessment session.",
       };
     default:
       return {
@@ -301,7 +312,7 @@ function HomeScreen({
         <p className="hero-card__eyebrow">NEURODETECT</p>
         <h2>AI-Assisted Multimodal Cognitive Assessment</h2>
         <p className="hero-card__body">
-          A structured assessment combining mental-health screening, cognitive tasks, and speech-based analysis.
+          A structured assessment combining mental-health screening and cognitive tasks in one research-oriented flow.
         </p>
         <div className="hero-card__actions">
           <PrimaryButton type="button" onClick={onStart}>
@@ -326,7 +337,7 @@ function HomeScreen({
           <p className="hero-card__eyebrow">About the Assessment</p>
           <h3>One continuous research-oriented assessment flow</h3>
           <p className="hero-card__body">
-            The assessment combines structured screening, cognitive performance tasks, and speech-based analysis in one
+            The assessment combines structured screening and cognitive performance tasks in one
             continuous session. It is designed for assessment, screening, and research use rather than standalone diagnosis.
           </p>
         </div>
@@ -340,12 +351,8 @@ function HomeScreen({
             message="MMSE, Memory Recall, N-Back, Boston Naming, and Trail Making capture different aspects of cognitive performance."
           />
           <InstructionCard
-            title="Speech Assessment"
-            message="A speech-based assessment contributes an additional signal to the multimodal assessment."
-          />
-          <InstructionCard
             title="Final Analysis"
-            message="The different assessment components are combined later into the overall assessment output."
+            message="Mental-health screening and Model 1 cognitive scoring are stored on the same assessment session for later analysis."
           />
         </div>
       </section>
@@ -647,50 +654,266 @@ function CognitiveOverviewScreen({ session, onResume, onStartNew }: CognitiveOve
   );
 }
 
-function SpeechScreen({ assessmentId, onContinue }: { assessmentId: string; onContinue: () => void }) {
-  return (
-    <section className="hero-card">
-      <p className="hero-card__eyebrow">Speech Assessment</p>
-      <h2>Continue with the same assessment session.</h2>
-      <p className="hero-card__body">
-        The speech stage uses the same assessment ID: <strong>{assessmentId}</strong>. No new patient or assessment is
-        created here.
-      </p>
-      <div className="hero-card__actions">
-        <PrimaryButton type="button" onClick={onContinue}>
-          Continue to Results
-        </PrimaryButton>
-      </div>
-    </section>
-  );
-}
+function ResultsScreen({
+  session,
+  results,
+  resultsStatus,
+  resultsError,
+  model1Status,
+  model1Error,
+  onRetryResults,
+  onRetryModel1,
+  onContinueAssessment,
+  onReturnHome,
+}: {
+  session: AssessmentSession | null;
+  results: AssessmentResults | null;
+  resultsStatus: LoadStatus;
+  resultsError: string | null;
+  model1Status: "idle" | "loading" | "error";
+  model1Error: string | null;
+  onRetryResults: () => void;
+  onRetryModel1: () => void;
+  onContinueAssessment: () => void;
+  onReturnHome: () => void;
+}) {
+  if (resultsStatus === "error") {
+    return (
+      <ErrorState
+        title={resultsError === "Assessment not found." ? "Assessment not found" : "Unable to load assessment results."}
+        message={resultsError ?? "Please try again."}
+        action={
+          resultsError === "Assessment not found." ? (
+            <PrimaryButton type="button" onClick={onReturnHome}>
+              Return Home
+            </PrimaryButton>
+          ) : (
+            <PrimaryButton type="button" onClick={onRetryResults}>
+              Retry
+            </PrimaryButton>
+          )
+        }
+      />
+    );
+  }
 
-function ResultsScreen({ session }: { session: AssessmentSession | null }) {
+  if (resultsStatus === "loading" || !results) {
+    return (
+      <div className="page-stack">
+        <LoadingState title="Loading assessment results..." message="Fetching the persisted results for this assessment session." />
+        <section className="hero-card hero-card--section results-skeleton" aria-hidden="true">
+          <div className="results-skeleton__block" />
+          <div className="results-skeleton__grid">
+            <div className="results-skeleton__card" />
+            <div className="results-skeleton__card" />
+            <div className="results-skeleton__card" />
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  const cognitiveTasks = results.completed_components.filter((item) =>
+    ["mmse", "memory", "nback", "boston_naming", "trail_making"].includes(item.key)
+  );
+  const showModel1Scale = typeof results.model1.score_scale_max === "number" && Number.isFinite(results.model1.score_scale_max);
+  const showAssessmentCompleteBanner = results.status === "completed";
+  const showAwaitingModel1Banner = results.status === "awaiting_model1";
+
   return (
     <div className="page-stack">
-      <CompletionState
-        title="Assessment flow completed"
-        message="Patient information, mental-health screening, and the existing cognitive stages now share one continuous assessment session."
-      />
       <section className="hero-card hero-card--section">
-        <div className="section-copy">
-          <p className="hero-card__eyebrow">Fusion</p>
-          <h3>Stored outputs are ready for the later fusion layer.</h3>
-          <p className="hero-card__body">
-            The later fusion stage can combine Model 1, PHQ/GAD outputs, and additional signals without creating a new
-            assessment ID.
-          </p>
-        </div>
-        {session ? (
-          <div className="session-summary">
-            <p>
-              <strong>Assessment ID:</strong> {session.assessment_id}
-            </p>
-            <p>
-              <strong>Participant:</strong> {session.full_name}
+        <div className="results-header">
+          <div className="results-header__copy">
+            <p className="hero-card__eyebrow">NEURODETECT</p>
+            <h3>Multimodal Cognitive Assessment</h3>
+            <p className="hero-card__body">
+              {showAssessmentCompleteBanner
+                ? "Assessment Completed"
+                : showAwaitingModel1Banner
+                  ? "Assessment Completed Pending Model 1"
+                  : "Assessment Incomplete"}
             </p>
           </div>
-        ) : null}
+          <div className="session-summary">
+            <p>
+              <strong>Assessment ID:</strong> {results.assessment_short_id}
+            </p>
+            <p>
+              <strong>Participant:</strong> {results.participant_name || session?.full_name || "Participant"}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {showAssessmentCompleteBanner ? (
+        <CompletionState title="Assessment Complete" message={results.completion_message} />
+      ) : null}
+
+      {showAwaitingModel1Banner ? (
+        <ErrorState
+          title="Model 1 unavailable"
+          message="The completed assessment is waiting for the persisted Model 1 cognitive performance score."
+          action={
+            <PrimaryButton type="button" onClick={onRetryModel1} disabled={model1Status === "loading"}>
+              {model1Status === "loading" ? "Retrying Model 1..." : "Retry Model 1"}
+            </PrimaryButton>
+          }
+        />
+      ) : null}
+
+      {results.status === "incomplete" ? (
+        <section className="hero-card hero-card--section">
+          <div className="section-copy">
+            <p className="hero-card__eyebrow">Assessment Status</p>
+            <h3>Assessment Incomplete</h3>
+            <p className="hero-card__body">
+              Continue the current assessment session to complete the remaining components before reviewing final results.
+            </p>
+          </div>
+          <div className="results-checklist" role="list" aria-label="Assessment completion checklist">
+            {results.completed_components.map((item) => (
+              <div className="results-checklist__item" key={item.key} role="listitem">
+                <span className={`results-checklist__marker ${item.completed ? "is-complete" : "is-pending"}`} aria-hidden="true">
+                  {item.completed ? "OK" : "NO"}
+                </span>
+                <span>{item.label}</span>
+                <strong>{item.completed ? "Completed" : "Pending"}</strong>
+              </div>
+            ))}
+          </div>
+          <div className="hero-card__actions">
+            <PrimaryButton type="button" onClick={onContinueAssessment}>
+              Continue Assessment
+            </PrimaryButton>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="hero-card hero-card--section">
+        <div className="section-copy">
+          <p className="hero-card__eyebrow">Cognitive Performance</p>
+          <h3>Model 1 - Cognitive Performance Assessment</h3>
+          <p className="hero-card__body">
+            This score summarizes performance across the cognitive tasks included in this assessment.
+          </p>
+        </div>
+        <div className="results-grid">
+          <article className="results-card results-card--score">
+            <p className="results-card__label">Cognitive Performance Score</p>
+            <div className="results-card__score">
+              {results.model1.available && results.model1.cognitive_performance_score !== null
+                ? results.model1.cognitive_performance_score.toFixed(2)
+                : "Unavailable"}
+              {showModel1Scale && results.model1.cognitive_performance_score !== null ? (
+                <span> / {results.model1.score_scale_max}</span>
+              ) : null}
+            </div>
+            <p className="results-card__meta">Model 1</p>
+          </article>
+
+          <article className="results-card">
+            <p className="results-card__label">Cognitive Tasks Completed</p>
+            <div className="results-task-list" role="list" aria-label="Completed cognitive tasks">
+              {cognitiveTasks.map((item) => (
+                <div className="results-task-list__item" key={item.key} role="listitem">
+                  <span aria-hidden="true">{item.completed ? "OK" : "NO"}</span>
+                  <span>{item.label}</span>
+                  <strong>{item.completed ? "Completed" : "Pending"}</strong>
+                </div>
+              ))}
+            </div>
+          </article>
+
+          <details className="results-card results-card--details">
+            <summary>Assessment Details</summary>
+            <div className="results-details">
+              <p>
+                <strong>Model:</strong> {results.model1.model_name ?? "NeuroDetect Model 1"}
+              </p>
+              <p>
+                <strong>Version:</strong> {results.model1.model_version ?? "1.0.0"}
+              </p>
+              <p>
+                <strong>Features:</strong> {results.model1.feature_count ?? "Unavailable"}
+              </p>
+              <p>
+                <strong>Type:</strong> {results.model1.model_type ?? "Cognitive performance regression"}
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      {model1Status === "error" && model1Error ? (
+        <ErrorState
+          title="Unable to refresh Model 1"
+          message="The score could not be regenerated from the stored cognitive task results. Please try again."
+          action={
+            <PrimaryButton type="button" onClick={onRetryModel1}>
+              Retry Model 1
+            </PrimaryButton>
+          }
+        />
+      ) : null}
+
+      <section className="hero-card hero-card--section">
+        <div className="section-copy">
+          <p className="hero-card__eyebrow">Mental Health Screening</p>
+          <h3>PHQ-9 and GAD-7 Screening</h3>
+          <p className="hero-card__body">
+            These questionnaires provide screening scores based on the responses provided during the assessment. They are
+            not diagnostic results.
+          </p>
+        </div>
+        <div className="results-grid results-grid--two">
+          <article className="results-card">
+            <p className="results-card__label">PHQ-9</p>
+            <div className="results-card__score results-card__score--small">
+              {results.mental_health.phq9.available && results.mental_health.phq9.score !== null
+                ? `${results.mental_health.phq9.score} / ${results.mental_health.phq9.score_max}`
+                : "Unavailable"}
+            </div>
+            <p>
+              <strong>Severity:</strong> {formatSeverityLabel(results.mental_health.phq9.severity)}
+            </p>
+          </article>
+
+          <article className="results-card">
+            <p className="results-card__label">GAD-7</p>
+            <div className="results-card__score results-card__score--small">
+              {results.mental_health.gad7.available && results.mental_health.gad7.score !== null
+                ? `${results.mental_health.gad7.score} / ${results.mental_health.gad7.score_max}`
+                : "Unavailable"}
+            </div>
+            <p>
+              <strong>Severity:</strong> {formatSeverityLabel(results.mental_health.gad7.severity)}
+            </p>
+          </article>
+        </div>
+        <p className="results-disclaimer">
+          These screening scores are intended to provide an indication of symptom severity based on the questionnaire
+          responses. They do not constitute a medical diagnosis.
+        </p>
+      </section>
+
+      <section className="hero-card hero-card--section">
+        <div className="section-copy">
+          <p className="hero-card__eyebrow">Speech Assessment</p>
+          <h3>Coming Soon</h3>
+          <p className="hero-card__body">{results.model3.description}</p>
+        </div>
+      </section>
+
+      <section className="hero-card hero-card--section">
+        <div className="section-copy">
+          <p className="hero-card__eyebrow">Overall Multimodal Result</p>
+          <h3>Pending completion of speech analysis</h3>
+          <p className="hero-card__body">
+            This assessment combines multiple sources of information. Future versions will include speech-based analysis
+            in the final multimodal summary.
+          </p>
+        </div>
       </section>
     </div>
   );
@@ -711,6 +934,11 @@ function App() {
   const [screeningError, setScreeningError] = useState<string | null>(null);
   const [resumeStatus, setResumeStatus] = useState<"idle" | "loading">("idle");
   const [resumeError, setResumeError] = useState<string | null>(null);
+  const [model1Status, setModel1Status] = useState<"idle" | "loading" | "error">("idle");
+  const [model1Error, setModel1Error] = useState<string | null>(null);
+  const [resultsStatus, setResultsStatus] = useState<LoadStatus>("idle");
+  const [resultsError, setResultsError] = useState<string | null>(null);
+  const [resultsData, setResultsData] = useState<AssessmentResults | null>(null);
 
   const headerCopy = getHeaderCopy(route);
   const completedTopStages = normalizeCompletedStages(session);
@@ -741,7 +969,30 @@ function App() {
   function clearAssessmentSession() {
     window.localStorage.removeItem(SESSION_STORAGE_KEY);
     setSession(null);
+    setModel1Status("idle");
+    setModel1Error(null);
+    setResultsStatus("idle");
+    setResultsError(null);
+    setResultsData(null);
   }
+
+  useEffect(() => {
+    if (!routeNeedsAssessment(route)) {
+      setModel1Status("idle");
+      setModel1Error(null);
+      setResultsStatus("idle");
+      setResultsError(null);
+      setResultsData(null);
+      return;
+    }
+    if (route.kind !== "results") {
+      setModel1Status("idle");
+      setModel1Error(null);
+      setResultsStatus("idle");
+      setResultsError(null);
+      return;
+    }
+  }, [route]);
 
   useEffect(() => {
     if (!routeNeedsAssessment(route)) {
@@ -751,7 +1002,7 @@ function App() {
     }
     if (!UUID_PATTERN.test(route.assessmentId)) {
       setLoadStatus("error");
-      setLoadError("Assessment session is invalid. Please return home and start from the patient information step.");
+      setLoadError("Assessment not found.");
       return;
     }
 
@@ -761,7 +1012,7 @@ function App() {
       .then(() => setLoadStatus("idle"))
       .catch((error) => {
         setLoadStatus("error");
-        setLoadError(error instanceof ApiError ? String(error.detail ?? error.message) : "Unable to load assessment.");
+        setLoadError(formatAssessmentError(error, "Unable to load assessment session."));
       });
   }, [route]);
 
@@ -814,6 +1065,36 @@ function App() {
     }
   }
 
+  async function runModel1Prediction(assessmentId: string): Promise<boolean> {
+    setModel1Status("loading");
+    setModel1Error(null);
+    try {
+      await predictModel1(assessmentId);
+      setModel1Status("idle");
+      return true;
+    } catch (error) {
+      setModel1Status("error");
+      setModel1Error(error instanceof ApiError ? String(error.detail ?? error.message) : "Unable to run Model 1.");
+      return false;
+    }
+  }
+
+  async function loadResults(assessmentId: string) {
+    setResultsStatus("loading");
+    setResultsError(null);
+    try {
+      const nextResults = await getAssessmentResults(assessmentId);
+      setResultsData(nextResults);
+      setResultsStatus("idle");
+      return nextResults;
+    } catch (error) {
+      setResultsData(null);
+      setResultsStatus("error");
+      setResultsError(formatAssessmentError(error, "Unable to load assessment results."));
+      return null;
+    }
+  }
+
   function startNewAssessment() {
     clearAssessmentSession();
     navigate({ kind: "patient" });
@@ -827,6 +1108,28 @@ function App() {
     }
     navigate(routeForStage(session.current_stage, session.assessment_id));
   }
+
+  async function handleTrailMakingComplete(assessmentId: string) {
+    const succeeded = await runModel1Prediction(assessmentId);
+    if (!succeeded) {
+      console.error("Model 1 inference failed after Trail Making completion.");
+    }
+    navigate({ kind: "results", assessmentId });
+  }
+
+  async function handleRetryModel1FromResults() {
+    if (route.kind !== "results") return;
+    const succeeded = await runModel1Prediction(route.assessmentId);
+    if (succeeded) {
+      await loadResults(route.assessmentId);
+      await loadSession(route.assessmentId);
+    }
+  }
+
+  useEffect(() => {
+    if (route.kind !== "results") return;
+    void loadResults(route.assessmentId);
+  }, [route]);
 
   const content = useMemo(() => {
     if (route.kind === "not-found") {
@@ -855,7 +1158,7 @@ function App() {
     if (loadStatus === "error" && routeNeedsAssessment(route)) {
       return (
         <ErrorState
-          title="Unable to load assessment session"
+          title={loadError === "Assessment not found." ? "Assessment not found" : "Unable to load assessment session"}
           message={loadError ?? "Please restart the assessment from home."}
           action={
             <PrimaryButton type="button" onClick={() => navigate({ kind: "home" }, true)}>
@@ -917,11 +1220,28 @@ function App() {
           />
         );
       case "trail-making":
-        return <TrailMakingGame assessmentId={route.assessmentId} onComplete={() => navigate({ kind: "speech", assessmentId: route.assessmentId })} />;
+        return <TrailMakingGame assessmentId={route.assessmentId} onComplete={() => void handleTrailMakingComplete(route.assessmentId)} />;
       case "speech":
-        return <SpeechScreen assessmentId={route.assessmentId} onContinue={() => navigate({ kind: "results", assessmentId: route.assessmentId })} />;
+        navigate({ kind: "results", assessmentId: route.assessmentId }, true);
+        return null;
       case "results":
-        return <ResultsScreen session={session} />;
+        return (
+          <ResultsScreen
+            session={session}
+            results={resultsData}
+            resultsStatus={resultsStatus}
+            resultsError={resultsError}
+            model1Status={model1Status}
+            model1Error={model1Error}
+            onRetryResults={() => void loadResults(route.assessmentId)}
+            onRetryModel1={() => void handleRetryModel1FromResults()}
+            onContinueAssessment={() => {
+              const nextStage = resultsData?.next_stage ?? session?.current_stage ?? "COGNITIVE";
+              navigate(routeForStage(nextStage, route.assessmentId));
+            }}
+            onReturnHome={() => navigate({ kind: "home" }, true)}
+          />
+        );
       default:
         return null;
     }
@@ -936,6 +1256,11 @@ function App() {
     screeningError,
     screeningStatus,
     session,
+    model1Status,
+    model1Error,
+    resultsData,
+    resultsStatus,
+    resultsError,
   ]);
 
   return (

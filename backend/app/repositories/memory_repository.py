@@ -64,3 +64,14 @@ class MemoryRepository:
         response = self._client.table("memory_results").insert(payload).execute()
         rows = response.data or []
         return rows[0] if rows else payload
+
+    def get_by_assessment(self, assessment_id: str) -> dict[str, Any] | None:
+        response = (
+            self._client.table("memory_results")
+            .select("*")
+            .eq("assessment_id", assessment_id)
+            .limit(1)
+            .execute()
+        )
+        rows = response.data or []
+        return rows[0] if rows else None

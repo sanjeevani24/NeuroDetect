@@ -73,3 +73,13 @@ class TrailMakingRepository:
         ]
         if payloads:
             self._client.table(EVENTS_TABLE).insert(payloads).execute()
+
+    def get_by_assessment(self, assessment_id: str) -> dict[str, Any] | None:
+        response = (
+            self._client.table(RESULTS_TABLE)
+            .select("*")
+            .eq("assessment_id", assessment_id)
+            .limit(1)
+            .execute()
+        )
+        return response.data[0] if response.data else None
