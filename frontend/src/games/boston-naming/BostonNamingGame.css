@@ -1,0 +1,117 @@
+.boston-naming__panel,
+.boston-naming__trial-card,
+.boston-naming__completion {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(126, 151, 187, 0.2);
+  border-radius: 28px;
+  box-shadow: 0 18px 48px rgba(53, 77, 114, 0.12);
+  padding: 2rem;
+}
+
+.boston-naming__eyebrow {
+  color: #5f718d;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+}
+
+.boston-naming__copy,
+.boston-naming__hint {
+  color: #566a88;
+  line-height: 1.7;
+}
+
+.boston-naming__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 1.5rem;
+}
+
+.boston-naming__completion {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.boston-naming__completion-progress {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.boston-naming__progress {
+  align-items: center;
+  background: rgba(241, 245, 251, 0.95);
+  border-radius: 999px;
+  color: #5e7290;
+  display: inline-flex;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  padding: 0.85rem 1rem;
+}
+
+.boston-naming__stimulus {
+  align-items: center;
+  background: linear-gradient(145deg, rgba(241, 247, 255, 0.95), rgba(231, 240, 252, 0.82));
+  border-radius: 24px;
+  display: flex;
+  font-size: 5rem;
+  justify-content: center;
+  min-height: 220px;
+  margin-bottom: 1.5rem;
+}
+
+.boston-naming__trial-meta h3,
+.boston-naming__panel h2 {
+  color: #1f2f47;
+  font-size: clamp(1.8rem, 3.2vw, 2.4rem);
+  margin: 0;
+}
+
+.boston-naming__cue {
+  background: rgba(222, 234, 250, 0.8);
+  border: 1px solid rgba(110, 139, 188, 0.22);
+  border-radius: 18px;
+  color: #2d4771;
+  margin-top: 1rem;
+  padding: 0.95rem 1rem;
+}
+
+.boston-naming__label {
+  color: #314967;
+  display: block;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem;
+}
+
+.boston-naming__textarea {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(120, 145, 185, 0.3);
+  border-radius: 18px;
+  color: #22344d;
+  font: inherit;
+  min-height: 120px;
+  padding: 1rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.boston-naming__error {
+  color: #8d2c2c;
+  margin-top: 1rem;
+}
+
+@media (max-width: 720px) {
+  .boston-naming__panel,
+  .boston-naming__trial-card,
+  .boston-naming__completion {
+    padding: 1.35rem;
+  }
+
+  .boston-naming__stimulus {
+    font-size: 4rem;
+    min-height: 180px;
+  }
+}

@@ -9,6 +9,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.assessments.router import router as assessments_router
+from app.games.boston_naming.router import router as boston_naming_router
+from app.games.trail_making.router import router as trail_making_router
 from app.games.nback.router import router as nback_router
 from app.games.mmse.router import router as mmse_router
 from app.games.memory.router import router as memory_router
@@ -31,6 +33,8 @@ app.include_router(assessments_router)
 app.include_router(memory_router)
 app.include_router(mmse_router)
 app.include_router(nback_router)
+app.include_router(boston_naming_router)
+app.include_router(trail_making_router)
 
 
 @app.get("/")

@@ -5,8 +5,10 @@ import { AssessmentProgress, type AssessmentStage } from "./components/ui/Assess
 import { CompletionState, ErrorState, InstructionCard, LoadingState } from "./components/ui/States";
 import { PrimaryButton, SecondaryButton } from "./components/ui/buttons";
 import { MemoryGame } from "./games/memory/MemoryGame";
+import { BostonNamingGame } from "./games/boston-naming/BostonNamingGame";
 import { MMSEGame } from "./games/mmse/MMSEGame";
 import { NBackGame } from "./games/nback/NBackGame";
+import { TrailMakingGame } from "./games/trail-making/TrailMakingGame";
 import { ApiError, createAssessmentSession } from "./services/api";
 
 const ASSESSMENT_ID_PLACEHOLDER = "REPLACE_WITH_REAL_ASSESSMENT_ID";
@@ -29,6 +31,8 @@ function getAssessmentId(): string {
 function getInitialStage(): AssessmentStage {
   const params = new URLSearchParams(window.location.search);
   const game = params.get("game");
+  if (game === "trail") return "trail";
+  if (game === "naming") return "naming";
   if (game === "nback") return "nback";
   if (game === "memory") return "memory";
   return "mmse";
@@ -37,8 +41,12 @@ function getInitialStage(): AssessmentStage {
 function syncAssessmentIdInUrl(assessmentId: string, stage: AssessmentStage) {
   const params = new URLSearchParams(window.location.search);
   params.set("assessment_id", assessmentId);
-  params.set("game", stage === "memory" ? "memory" : "mmse");
+  params.set("game", stage);
   window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+}
+
+function clearAssessmentSessionFromUrl() {
+  window.history.replaceState({}, "", window.location.pathname);
 }
 
 function AppHeader({
@@ -67,10 +75,12 @@ function AppHeader({
 
 function StartScreen({
   onStart,
+  onStartNew,
   hasExistingAssessment,
   isCreating,
 }: {
   onStart: () => void;
+  onStartNew: () => void;
   hasExistingAssessment: boolean;
   isCreating: boolean;
 }) {
@@ -90,6 +100,11 @@ function StartScreen({
                 ? "Resume Assessment"
                 : "Start Assessment"}
           </PrimaryButton>
+          {hasExistingAssessment ? (
+            <SecondaryButton type="button" onClick={onStartNew} disabled={isCreating}>
+              Start New Assessment
+            </SecondaryButton>
+          ) : null}
           <SecondaryButton type="button" disabled>
             {hasExistingAssessment ? "Secure session active" : "A new secure session will be created"}
           </SecondaryButton>
@@ -99,11 +114,11 @@ function StartScreen({
       <div className="overview-grid">
         <InstructionCard
           title="Assessment overview"
-          message="The current prototype begins with MMSE, followed by Memory Recall, using one shared assessment session."
+          message="The current prototype begins with MMSE, then Memory Recall, N-Back, and Boston Naming using one shared assessment session."
         />
         <InstructionCard
           title="Estimated duration"
-          message="Plan for approximately 12 to 18 minutes for the currently implemented stages."
+          message="Plan for approximately 16 to 24 minutes for the currently implemented stages."
         />
         <InstructionCard
           title="What to expect"
@@ -148,6 +163,16 @@ function App() {
     }
   }
 
+  function startNewAssessment() {
+    clearAssessmentSessionFromUrl();
+    setAssessmentId(ASSESSMENT_ID_PLACEHOLDER);
+    setStarted(false);
+    setStage("mmse");
+    setCompletedStages([]);
+    setSessionStatus("idle");
+    setSessionError(null);
+  }
+
   function completeStage(nextStage?: AssessmentStage) {
     setCompletedStages((prev) => {
       if (prev.includes(stage)) return prev;
@@ -160,7 +185,7 @@ function App() {
       }
       return;
     }
-    setStage("trail");
+    setStage("complete");
   }
 
   return (
@@ -186,6 +211,7 @@ function App() {
       ) : !started ? (
         <StartScreen
           onStart={() => void startAssessment()}
+          onStartNew={startNewAssessment}
           hasExistingAssessment={hasValidAssessmentId}
           isCreating={false}
         />
@@ -200,10 +226,14 @@ function App() {
         <MemoryGame assessmentId={assessmentId} onComplete={() => completeStage("nback")} />
       ) : stage === "nback" ? (
         <NBackGame assessmentId={assessmentId} onComplete={() => completeStage("naming")} />
+      ) : stage === "naming" ? (
+        <BostonNamingGame assessmentId={assessmentId} onComplete={() => completeStage("trail")} />
+      ) : stage === "trail" ? (
+        <TrailMakingGame assessmentId={assessmentId} />
       ) : (
         <CompletionState
-          title="Current milestone complete"
-          message="MMSE, Memory Recall, and N-Back have been completed in this prototype session."
+          title="Assessment complete"
+          message="MMSE, Memory Recall, N-Back, Boston Naming, and Trail Making have been completed in this prototype session."
         />
       )}
     </AppShell>

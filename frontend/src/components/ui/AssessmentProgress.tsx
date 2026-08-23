@@ -1,4 +1,4 @@
-export type AssessmentStage = "mmse" | "memory" | "nback" | "naming" | "trail";
+export type AssessmentStage = "mmse" | "memory" | "nback" | "naming" | "trail" | "complete";
 
 const STAGE_LABELS: Record<AssessmentStage, string> = {
   mmse: "MMSE",
@@ -6,6 +6,7 @@ const STAGE_LABELS: Record<AssessmentStage, string> = {
   nback: "N-Back",
   naming: "Boston Naming",
   trail: "Trail Making",
+  complete: "Complete",
 };
 
 const STAGES: AssessmentStage[] = ["mmse", "memory", "nback", "naming", "trail"];
@@ -19,7 +20,7 @@ export function AssessmentProgress({
   currentStage,
   completedStages = [],
 }: AssessmentProgressProps) {
-  const currentIndex = STAGES.indexOf(currentStage);
+  const currentIndex = currentStage === "complete" ? STAGES.length : STAGES.indexOf(currentStage);
   const completed = new Set(completedStages);
 
   return (
