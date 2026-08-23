@@ -1,0 +1,109 @@
+.trail-card {
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(126, 151, 187, 0.2);
+  border-radius: 28px;
+  box-shadow: 0 18px 48px rgba(53, 77, 114, 0.12);
+  padding: 1.5rem;
+}
+
+.trail-card__eyebrow {
+  color: #5f718d;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+}
+
+.trail-card h2 {
+  color: #1f2f47;
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+  margin: 0 0 1rem;
+}
+
+.trail-card__body {
+  color: #566a88;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+.trail-example {
+  align-items: center;
+  background: rgba(238, 244, 252, 0.9);
+  border-radius: 18px;
+  display: inline-flex;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1.1rem;
+}
+
+.trail-example span {
+  color: #29415f;
+  font-weight: 700;
+}
+
+.trail-example__arrow {
+  color: #5f718d;
+}
+
+.trail-progress {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.trail-progress__pill {
+  background: rgba(241, 245, 251, 0.95);
+  border-radius: 999px;
+  color: #5e7290;
+  font-size: 0.98rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  padding: 0.8rem 0.95rem;
+}
+
+.trail-board {
+  background: linear-gradient(145deg, rgba(245, 249, 255, 0.95), rgba(232, 240, 252, 0.82));
+  border: 1px solid rgba(126, 151, 187, 0.18);
+  border-radius: 24px;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+
+.trail-board__svg {
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.trail-board__node circle {
+  cursor: pointer;
+  fill: rgba(255, 255, 255, 0.95);
+  stroke: rgba(79, 108, 148, 0.56);
+  stroke-width: 3;
+}
+
+.trail-board__node text {
+  fill: #20324b;
+  font-size: 1.1rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.trail-board__node.is-completed circle {
+  fill: rgba(214, 241, 226, 0.95);
+  stroke: rgba(57, 146, 104, 0.66);
+}
+
+.trail-status {
+  color: #566a88;
+  margin-top: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .trail-card {
+    padding: 1rem;
+  }
+}
