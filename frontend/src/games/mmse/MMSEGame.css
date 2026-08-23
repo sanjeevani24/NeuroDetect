@@ -1,0 +1,66 @@
+.mmse-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.mmse-field {
+  display: grid;
+  gap: 8px;
+}
+
+.mmse-field span,
+.mmse-caption {
+  color: var(--text-muted);
+}
+
+.mmse-field input,
+.mmse-inline-form input,
+.memory-response-row input,
+.distractor-phase input {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text);
+}
+
+.mmse-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+.mmse-word-row,
+.mmse-command-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.mmse-word-chip,
+.mmse-command-button {
+  min-height: 96px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-strong);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.mmse-inline-form {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mmse-inline-form input {
+  flex: 1 1 220px;
+}
+
+.mmse-response-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+}
