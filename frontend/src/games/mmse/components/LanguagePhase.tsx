@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { GameShell } from "../../../components/ui/GameShell";
 import { PrimaryButton } from "../../../components/ui/buttons";
@@ -13,8 +13,11 @@ interface LanguagePhaseProps {
 
 export function LanguagePhase({ assessmentId, onEvent, onComplete }: LanguagePhaseProps) {
   const [values, setValues] = useState<Record<string, string>>({});
+  const hasLoggedQuestionsRef = useRef(false);
 
   useEffect(() => {
+    if (hasLoggedQuestionsRef.current) return;
+    hasLoggedQuestionsRef.current = true;
     LANGUAGE_TASKS.forEach((task) => {
       onEvent(
         createMMSEEvent({

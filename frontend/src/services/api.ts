@@ -1,8 +1,14 @@
 import type { MemoryEvent } from "../games/memory/telemetry/eventTypes";
 import type { ConfidenceRatings } from "../games/memory/types/memoryTypes";
 import type { MMSEEvent } from "../games/mmse/telemetry/mmseEvents";
+import type { NBackTelemetryEvent } from "../games/nback/telemetry/nbackEvents";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+
+export interface AssessmentSession {
+  patient_id: string;
+  assessment_id: string;
+}
 
 export interface MemoryCompletionPayload {
   events: MemoryEvent[];
@@ -60,6 +66,32 @@ export interface MMSEGameResult {
   features: MMSEFeatureSet;
 }
 
+export interface NBackCompletionPayload {
+  events: NBackTelemetryEvent[];
+}
+
+export interface NBackFeatureSet {
+  nback_accuracy: number;
+  hit_rate: number;
+  false_alarm_rate: number;
+  sensitivity: number;
+  response_latency: number;
+  latency_variability: number;
+  omission_errors: number;
+  commission_errors: number;
+  d_prime: number;
+  response_consistency: number;
+  fatigue_trend: number;
+  completion_time: number;
+}
+
+export interface NBackGameResult {
+  assessment_id: string;
+  game: "nback";
+  status: string;
+  features: NBackFeatureSet;
+}
+
 export class ApiError extends Error {
   status: number;
   detail: unknown;
@@ -69,6 +101,34 @@ export class ApiError extends Error {
     this.status = status;
     this.detail = detail;
   }
+}
+
+export async function createAssessmentSession(): Promise<AssessmentSession> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/assessments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    throw new ApiError(
+      0,
+      "Could not reach the NeuroDetect API. Confirm the FastAPI server is running and VITE_API_BASE_URL is correct."
+    );
+  }
+
+  if (!response.ok) {
+    let detail: unknown = null;
+    try {
+      const body = await response.json();
+      detail = body.detail ?? body;
+    } catch {
+      detail = await response.text();
+    }
+    throw new ApiError(response.status, detail);
+  }
+
+  return response.json();
 }
 
 /**
@@ -119,6 +179,41 @@ export async function completeMMSEGame(
   try {
     response = await fetch(
       `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/games/mmse/complete`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+  } catch (error) {
+    throw new ApiError(
+      0,
+      "Could not reach the NeuroDetect API. Confirm the FastAPI server is running and VITE_API_BASE_URL is correct."
+    );
+  }
+
+  if (!response.ok) {
+    let detail: unknown = null;
+    try {
+      const body = await response.json();
+      detail = body.detail ?? body;
+    } catch {
+      detail = await response.text();
+    }
+    throw new ApiError(response.status, detail);
+  }
+
+  return response.json();
+}
+
+export async function completeNBackGame(
+  assessmentId: string,
+  payload: NBackCompletionPayload
+): Promise<NBackGameResult> {
+  let response: Response;
+  try {
+    response = await fetch(
+      `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/games/nback/complete`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
