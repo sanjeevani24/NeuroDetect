@@ -16,6 +16,7 @@ import { monotonicNowMs } from "./utils/timing";
 
 interface TrailMakingGameProps {
   assessmentId: string;
+  onComplete?: () => void;
 }
 
 type SubmissionStatus = "idle" | "submitting" | "success" | "error";
@@ -27,7 +28,7 @@ function classifyError(node: TrailNodeLayout, expectedNode: TrailNodeLayout, com
   return "WRONG_TARGET";
 }
 
-export function TrailMakingGame({ assessmentId }: TrailMakingGameProps) {
+export function TrailMakingGame({ assessmentId, onComplete }: TrailMakingGameProps) {
   const [phase, setPhase] = useState<"INTRO" | "RUNNING" | "COMPLETION">("INTRO");
   const [completedCount, setCompletedCount] = useState(0);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -59,6 +60,12 @@ export function TrailMakingGame({ assessmentId }: TrailMakingGameProps) {
     }, 100);
     return () => window.clearInterval(interval);
   }, [phase]);
+
+  useEffect(() => {
+    if (submissionStatus !== "success") return;
+    const timer = window.setTimeout(() => onComplete?.(), 1200);
+    return () => window.clearTimeout(timer);
+  }, [onComplete, submissionStatus]);
 
   function handleStart() {
     const ts = monotonicNowMs();

@@ -14,6 +14,7 @@ from app.games.trail_making.router import router as trail_making_router
 from app.games.nback.router import router as nback_router
 from app.games.mmse.router import router as mmse_router
 from app.games.memory.router import router as memory_router
+from app.mental_health.router import router as mental_health_router
 
 app = FastAPI(
     title="NeuroDetect API",
@@ -30,6 +31,7 @@ app.add_middleware(
 )
 
 app.include_router(assessments_router)
+app.include_router(mental_health_router)
 app.include_router(memory_router)
 app.include_router(mmse_router)
 app.include_router(nback_router)

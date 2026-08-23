@@ -1,45 +1,39 @@
-export type AssessmentStage = "mmse" | "memory" | "nback" | "naming" | "trail" | "complete";
-
-const STAGE_LABELS: Record<AssessmentStage, string> = {
-  mmse: "MMSE",
-  memory: "Memory Recall",
-  nback: "N-Back",
-  naming: "Boston Naming",
-  trail: "Trail Making",
-  complete: "Complete",
-};
-
-const STAGES: AssessmentStage[] = ["mmse", "memory", "nback", "naming", "trail"];
+export interface AssessmentProgressStep {
+  id: string;
+  label: string;
+}
 
 interface AssessmentProgressProps {
-  currentStage: AssessmentStage;
-  completedStages?: AssessmentStage[];
+  currentStage: string;
+  steps: AssessmentProgressStep[];
+  completedStages?: string[];
 }
 
 export function AssessmentProgress({
   currentStage,
+  steps,
   completedStages = [],
 }: AssessmentProgressProps) {
-  const currentIndex = currentStage === "complete" ? STAGES.length : STAGES.indexOf(currentStage);
+  const currentIndex = steps.findIndex((step) => step.id === currentStage);
   const completed = new Set(completedStages);
 
   return (
     <ol className="assessment-progress" aria-label="Assessment progress">
-      {STAGES.map((stage, index) => {
+      {steps.map((step, index) => {
         const state =
-          completed.has(stage) || index < currentIndex
+          completed.has(step.id) || (currentIndex >= 0 && index < currentIndex)
             ? "completed"
-            : stage === currentStage
+            : step.id === currentStage
               ? "current"
               : "upcoming";
-        const marker = state === "completed" ? "✓" : state === "current" ? "●" : "○";
+        const marker = state === "completed" ? "✓" : state === "current" ? "•" : "○";
 
         return (
-          <li key={stage} className={`assessment-progress__step is-${state}`}>
+          <li key={step.id} className={`assessment-progress__step is-${state}`}>
             <span className="assessment-progress__marker" aria-hidden="true">
               {marker}
             </span>
-            <span>{STAGE_LABELS[stage]}</span>
+            <span>{step.label}</span>
           </li>
         );
       })}
