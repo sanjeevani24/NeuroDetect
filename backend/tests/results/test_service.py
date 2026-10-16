@@ -1,4 +1,5 @@
 from app.results.service import ResultsService
+from app.results.schemas import AssessmentResultsResponse
 
 
 class FakeResultsRepository:
@@ -42,6 +43,16 @@ def test_service_marks_completed_when_all_required_results_exist():
     assert result["missing_components"] == []
     assert result["model1"]["available"] is True
 
+    # Response validation must preserve the saved regression metrics without inventing accuracy.
+    evaluation = AssessmentResultsResponse(**result).model1.evaluation
+    assert evaluation is not None
+    assert evaluation.data_type == "synthetic"
+    assert evaluation.clinical_validation is False
+    assert evaluation.test_samples == 2000
+    assert evaluation.test_metrics.mae == 1.1362963236236572
+    assert evaluation.test_metrics.r2 == 0.9899399403545585
+    assert "accuracy" not in evaluation.model_dump()
+
 
 def test_service_marks_awaiting_model1_when_only_model1_is_missing():
     service = ResultsService(
@@ -84,3 +95,34 @@ def test_service_marks_incomplete_when_core_assessment_steps_are_missing():
     assert result["status"] == "incomplete"
     assert result["next_stage"] == "NBACK"
     assert "N-Back" in result["missing_components"]
+
+
+def test_evaluation_is_unavailable_without_saved_test_metrics():
+    assert ResultsService._parse_model_evaluation({}) is None
+
+
+def test_evaluation_rejects_invalid_values_and_keeps_negative_r2():
+    evaluation = ResultsService._parse_model_evaluation({
+        "test_rows": True,
+        "test_metrics": {"MAE": -1, "RMSE": float("inf"), "R2": -0.5, "MedianAE": True},
+    })
+    assert evaluation is not None
+    assert evaluation.test_samples is None
+    assert evaluation.test_metrics.mae is None
+    assert evaluation.test_metrics.rmse is None
+    assert evaluation.test_metrics.median_absolute_error is None
+    assert evaluation.test_metrics.r2 == -0.5
+
+
+def test_saved_prediction_from_another_version_does_not_get_current_evaluation():
+    service = ResultsService(FakeResultsRepository(
+        session={
+            "assessment_id": "66666666-6666-4666-8666-666666666666",
+            "full_name": "Alex Doe",
+            "current_stage": "RESULTS",
+            "completed_stages": [],
+        },
+        model1={"cognitive_performance_score": 81.25, "model_version": "older-model"},
+    ))
+    result = service.get_results("66666666-6666-4666-8666-666666666666")
+    assert result["model1"]["evaluation"] is None

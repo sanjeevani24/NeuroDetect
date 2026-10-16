@@ -1,14 +1,15 @@
 :root {
   color-scheme: light;
   font-family: "Inter", "Segoe UI", sans-serif;
+  font-size: 20px;
   --bg: #eef3f8;
   --bg-strong: #dfe8f3;
   --surface: rgba(255, 255, 255, 0.88);
   --surface-strong: #ffffff;
   --surface-accent: #f4f8fc;
   --text: #142033;
-  --text-muted: #5d6c82;
-  --border: rgba(20, 32, 51, 0.12);
+  --text-muted: #485970;
+  --border: #b7c4d2;
   --border-strong: rgba(20, 32, 51, 0.2);
   --primary: #15345d;
   --primary-soft: #d9e7fb;
@@ -39,10 +40,9 @@ body,
 
 body {
   margin: 0;
+  line-height: 1.6;
   color: var(--text);
-  background:
-    radial-gradient(circle at top left, rgba(71, 105, 143, 0.2), transparent 28%),
-    linear-gradient(180deg, #f7fbff 0%, var(--bg) 50%, #edf2f7 100%);
+  background: #f4f7fa;
 }
 
 button,
@@ -51,11 +51,15 @@ select {
   font: inherit;
 }
 
+button {
+  min-height: 56px;
+}
+
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 3px solid rgba(71, 105, 143, 0.35);
-  outline-offset: 2px;
+  outline: 3px solid #155da5;
+  outline-offset: 4px;
 }
 
 .app-shell {
@@ -75,14 +79,11 @@ select:focus-visible {
 
 .app-shell__frame {
   position: relative;
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 32px;
-  background: rgba(247, 250, 253, 0.82);
-  box-shadow: var(--shadow-lg);
-  backdrop-filter: blur(18px);
-  overflow: hidden;
+  border-radius: 20px;
+  background: #fff;
 }
 
 .app-shell__header,
@@ -105,6 +106,7 @@ select:focus-visible {
   justify-content: space-between;
   gap: 24px;
   align-items: flex-start;
+  flex-direction: column;
 }
 
 .app-header__brand {
@@ -129,8 +131,7 @@ select:focus-visible {
   margin: 0 0 6px;
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
   color: var(--text-muted);
 }
 
@@ -148,7 +149,7 @@ select:focus-visible {
 }
 
 .app-header__progress {
-  max-width: 520px;
+  max-width: 100%;
 }
 
 .assessment-progress {
@@ -191,6 +192,81 @@ select:focus-visible {
   font-size: 0.92rem;
 }
 
+.assessment-sources summary {
+  display: list-item;
+  padding: 12px 4px;
+  min-height: 56px;
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.assessment-sources summary:focus-visible,
+.assessment-sources a:focus-visible {
+  outline: 3px solid #155da5;
+  outline-offset: 4px;
+}
+
+.assessment-sources__body {
+  max-width: 760px;
+  padding-top: 12px;
+}
+
+.assessment-sources__body p {
+  margin: 0 0 12px;
+}
+
+.assessment-sources__list {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0 0;
+}
+
+.assessment-sources__list li {
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+}
+
+.assessment-sources__list h3 {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+}
+
+.assessment-sources a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+.assessment-sources__note {
+  color: var(--text-muted);
+}
+
+.model-evaluation summary {
+  min-height: 56px;
+  padding: 12px 4px;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.model-evaluation summary:focus-visible,
+.model-evaluation a:focus-visible {
+  outline: 3px solid #155da5;
+  outline-offset: 4px;
+}
+
+.model-evaluation__body { display: grid; gap: 24px; padding-top: 20px; }
+.model-evaluation__body p { margin: 0 0 12px; }
+.model-evaluation__body h3 { margin: 0 0 12px; font-size: 1.1rem; }
+.model-evaluation a { color: var(--primary); text-underline-offset: 3px; }
+.model-evaluation__table-scroll { max-width: 100%; overflow-x: auto; }
+.model-evaluation__table { width: 100%; border-collapse: collapse; text-align: left; }
+.model-evaluation__table caption { text-align: left; padding: 12px 0; color: var(--text-muted); }
+.model-evaluation__table th, .model-evaluation__table td { padding: 14px; border: 1px solid var(--border); vertical-align: top; }
+.model-evaluation__table thead { background: var(--surface-accent); }
+
 .start-screen {
   display: grid;
   gap: 24px;
@@ -207,7 +283,7 @@ select:focus-visible {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   background: var(--surface);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .hero-card {
@@ -233,9 +309,8 @@ select:focus-visible {
 .hero-card h2 {
   max-width: 760px;
   margin: 0;
-  font-size: clamp(2rem, 4vw, 3.4rem);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
+  font-size: clamp(1.65rem, 4vw, 2.3rem);
+  line-height: 1.25;
 }
 
 .hero-card__body {
@@ -342,9 +417,10 @@ select:focus-visible {
 }
 
 .button {
-  min-height: 46px;
-  padding: 0 18px;
-  border-radius: 999px;
+  min-height: 60px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
   border: 1px solid transparent;
   cursor: pointer;
   transition:
@@ -398,7 +474,8 @@ select:focus-visible {
 .form-grid {
   display: grid;
   gap: 18px;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 640px;
 }
 
 .form-field {
@@ -409,7 +486,7 @@ select:focus-visible {
 
 .form-field input,
 .form-field select {
-  min-height: 48px;
+  min-height: 60px;
   padding: 0 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
@@ -432,7 +509,7 @@ select:focus-visible {
 .form-actions {
   display: flex;
   gap: 12px;
-  justify-content: flex-end;
+  justify-content: flex-start;
   flex-wrap: wrap;
   grid-column: 1 / -1;
 }
@@ -477,6 +554,7 @@ select:focus-visible {
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
+  min-height: 68px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.84);
@@ -495,6 +573,37 @@ select:focus-visible {
 
 .option-row input {
   margin: 0;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+}
+
+.option-row:focus-within {
+  outline: 3px solid #155da5;
+  outline-offset: 3px;
+}
+
+.welcome-note, .field-hint {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.welcome-note {
+  margin: 0;
+  padding: 0 12px;
+  max-width: 760px;
+}
+
+.memory-intro > button {
+  padding: 12px 24px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  justify-self: center;
 }
 
 .session-summary {
@@ -552,11 +661,7 @@ select:focus-visible {
 .results-card--details summary {
   cursor: pointer;
   font-weight: 600;
-  list-style: none;
-}
-
-.results-card--details summary::-webkit-details-marker {
-  display: none;
+  min-height: 48px;
 }
 
 .results-card__label {
@@ -717,5 +822,25 @@ select:focus-visible {
 
   .form-actions .button {
     width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-shell { padding: 12px 8px; }
+  .app-shell__main, .app-shell__header { padding: 16px; }
+  .hero-card, .form-card, .questionnaire-card, .game-shell { padding: 18px; }
+  .app-header__mark { display: none; }
+  .hero-card__actions { flex-direction: column; }
+  .hero-card__actions .button { width: 100%; }
+  .assessment-progress { gap: 8px; }
+  .assessment-progress__step { padding: 6px 10px; }
+  .results-grid, .results-grid--two, .results-skeleton__grid { grid-template-columns: minmax(0, 1fr); }
+  .results-header { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }

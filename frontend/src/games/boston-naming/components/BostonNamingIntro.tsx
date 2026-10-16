@@ -7,7 +7,7 @@ interface BostonNamingIntroProps {
 export function BostonNamingIntro({ onContinue }: BostonNamingIntroProps) {
   return (
     <section className="boston-naming__panel">
-      <p className="boston-naming__eyebrow">Boston Naming-style task</p>
+      <p className="boston-naming__eyebrow">Name the pictures</p>
       <h2>Say the name of each object clearly.</h2>
       <div className="boston-naming__copy">
         <p>You will see pictures of different objects.</p>
