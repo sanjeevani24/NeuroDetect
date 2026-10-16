@@ -26,14 +26,15 @@ export function AssessmentProgress({
             : step.id === currentStage
               ? "current"
               : "upcoming";
-        const marker = state === "completed" ? "✓" : state === "current" ? "•" : "○";
+        const marker = state === "completed" ? "✓" : index + 1;
 
         return (
-          <li key={step.id} className={`assessment-progress__step is-${state}`}>
+          <li key={step.id} className={`assessment-progress__step is-${state}`} aria-current={state === "current" ? "step" : undefined}>
             <span className="assessment-progress__marker" aria-hidden="true">
               {marker}
             </span>
             <span>{step.label}</span>
+            {state === "completed" ? <span className="sr-only"> — completed</span> : null}
           </li>
         );
       })}

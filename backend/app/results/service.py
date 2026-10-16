@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 
 from app.assessments.schemas import AssessmentStage
 from app.ml.model1.config import MODEL_METADATA_PATH
 from app.ml.model1.exceptions import Model1SchemaNotReadyError
 from app.repositories.results_repository import ResultsRepository
+from app.results.schemas import ModelEvaluationSummary, RegressionTestMetrics
 
 
 RESULT_COMPONENTS: list[tuple[str, str]] = [
@@ -32,6 +34,7 @@ class Model1DisplayMetadata:
     feature_count: int | None
     model_type: str | None
     score_scale_max: float | None
+    evaluation: ModelEvaluationSummary | None = None
 
 
 class ResultsService:
@@ -98,6 +101,10 @@ class ResultsService:
                 "feature_count": self._model1_metadata.feature_count,
                 "model_type": self._model1_metadata.model_type,
                 "score_scale_max": self._model1_metadata.score_scale_max,
+                # Evaluation belongs to the packaged model version, not an older saved prediction.
+                "evaluation": self._model1_metadata.evaluation
+                if model1_result is None or model1_result.get("model_version") == self._model1_metadata.model_version
+                else None,
             },
             "mental_health": {
                 "phq9": {
@@ -170,4 +177,33 @@ class ResultsService:
             feature_count=int(payload["feature_count"]) if payload.get("feature_count") is not None else None,
             model_type="Cognitive performance regression",
             score_scale_max=float(score_scale_max) if score_scale_max is not None else None,
+            evaluation=ResultsService._parse_model_evaluation(payload),
+        )
+
+    @staticmethod
+    def _parse_model_evaluation(payload: dict) -> ModelEvaluationSummary | None:
+        metrics = payload.get("test_metrics")
+        if not isinstance(metrics, dict):
+            return None
+
+        def metric(key: str, *, is_r2: bool = False) -> float | None:
+            value = metrics.get(key)
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                return None
+            if (is_r2 and value > 1) or (not is_r2 and value < 0):
+                return None
+            return float(value)
+
+        test_rows = payload.get("test_rows")
+        return ModelEvaluationSummary(
+            data_type=payload.get("data_type") if isinstance(payload.get("data_type"), str) else None,
+            clinical_validation=payload.get("clinical_validation")
+            if isinstance(payload.get("clinical_validation"), bool) else None,
+            test_samples=test_rows if type(test_rows) is int and test_rows > 0 else None,
+            test_metrics=RegressionTestMetrics(
+                mae=metric("MAE"),
+                rmse=metric("RMSE"),
+                r2=metric("R2", is_r2=True),
+                median_absolute_error=metric("MedianAE"),
+            ),
         )

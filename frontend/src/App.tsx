@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import { AppShell } from "./components/ui/AppShell";
+import { AssessmentSources } from "./components/ui/AssessmentSources";
+import { ModelEvaluation } from "./components/ui/ModelEvaluation";
 import { AssessmentProgress, type AssessmentProgressStep } from "./components/ui/AssessmentProgress";
-import { CompletionState, ErrorState, InstructionCard, LoadingState } from "./components/ui/States";
+import { CompletionState, ErrorState, LoadingState } from "./components/ui/States";
 import { PrimaryButton, SecondaryButton } from "./components/ui/buttons";
 import { BostonNamingGame } from "./games/boston-naming/BostonNamingGame";
 import { MemoryGame } from "./games/memory/MemoryGame";
@@ -28,17 +30,17 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const TOP_LEVEL_STEPS: AssessmentProgressStep[] = [
-  { id: "mental-health", label: "Mental Health" },
-  { id: "cognitive", label: "Cognitive Assessment" },
+  { id: "mental-health", label: "How you feel" },
+  { id: "cognitive", label: "Memory & thinking" },
   { id: "results", label: "Results" },
 ];
 
 const COGNITIVE_STEPS: AssessmentProgressStep[] = [
-  { id: "mmse", label: "MMSE" },
+  { id: "mmse", label: "Everyday questions" },
   { id: "memory", label: "Memory Recall" },
-  { id: "nback", label: "N-Back" },
-  { id: "boston-naming", label: "Boston Naming" },
-  { id: "trail-making", label: "Trail Making" },
+  { id: "nback", label: "Letter matching" },
+  { id: "boston-naming", label: "Name the pictures" },
+  { id: "trail-making", label: "Connect the circles" },
 ];
 
 const PHQ9_QUESTIONS = [
@@ -91,6 +93,7 @@ interface AppHeaderProps {
   subtitle: string;
   currentStage: string;
   completedStages: string[];
+  showProgress: boolean;
 }
 
 interface HomeScreenProps {
@@ -244,38 +247,38 @@ function getHeaderCopy(route: Route): { title: string; subtitle: string } {
   switch (route.kind) {
     case "home":
       return {
-        title: "AI-Assisted Multimodal Cognitive Assessment",
-        subtitle: "A structured assessment combining mental-health screening and cognitive tasks in one research-oriented flow.",
+        title: "Your memory and wellbeing check",
+        subtitle: "Simple questions. Clear instructions. One step at a time.",
       };
     case "patient":
       return {
-        title: "Patient Information",
-        subtitle: "Collect the required participant details before creating the secure assessment session.",
+        title: "About you",
+        subtitle: "A few details before we begin.",
       };
     case "mental-health":
       return {
-        title: "Mental Health Screening",
-        subtitle: "PHQ-9 and GAD-7 screening questionnaires for the last two weeks.",
+        title: "How you feel",
+        subtitle: "Choose the answer that feels closest to your experience.",
       };
     case "cognitive":
       return {
-        title: "Cognitive Assessment Overview",
-        subtitle: "The existing cognitive assessment page, preserved and moved after PHQ-9 and GAD-7.",
+        title: "Memory and thinking",
+        subtitle: "Follow the instructions for each activity and do your best.",
       };
     case "results":
       return {
-        title: "Final Results",
-        subtitle: "Cognitive performance scoring is generated from the completed cognitive tasks on the same assessment session.",
+        title: "Your results",
+        subtitle: "A summary of your answers and activities.",
       };
     default:
       return {
-        title: "Cognitive Assessment Platform",
-        subtitle: "Shared assessment session across all stages.",
+        title: "Memory and thinking",
+        subtitle: "Follow the instructions for this activity.",
       };
   }
 }
 
-function AppHeader({ title, subtitle, currentStage, completedStages }: AppHeaderProps) {
+function AppHeader({ title, subtitle, currentStage, completedStages, showProgress }: AppHeaderProps) {
   return (
     <div className="app-header">
       <div className="app-header__brand">
@@ -286,14 +289,13 @@ function AppHeader({ title, subtitle, currentStage, completedStages }: AppHeader
           <p className="app-header__subtitle">{subtitle}</p>
         </div>
       </div>
-      <div className="app-header__progress">
-        <span className="app-header__label">Assessment</span>
+      {showProgress ? <div className="app-header__progress">
         <AssessmentProgress
           currentStage={currentStage}
           completedStages={completedStages}
           steps={TOP_LEVEL_STEPS}
         />
-      </div>
+      </div> : null}
     </div>
   );
 }
@@ -309,53 +311,24 @@ function HomeScreen({
   return (
     <div className="page-stack">
       <section className="hero-card hero-card--landing">
-        <p className="hero-card__eyebrow">NEURODETECT</p>
-        <h2>AI-Assisted Multimodal Cognitive Assessment</h2>
+        <h2>Welcome. Let’s take it one step at a time.</h2>
         <p className="hero-card__body">
-          A structured assessment combining mental-health screening and cognitive tasks in one research-oriented flow.
+          Answer a few questions about how you feel, then try some memory and thinking activities. We’ll explain each activity before you begin.
         </p>
         <div className="hero-card__actions">
-          <PrimaryButton type="button" onClick={onStart}>
-            Start Assessment
+          <PrimaryButton type="button" onClick={hasSavedAssessment ? onResume : onStart} disabled={resumeStatus === "loading"}>
+            {resumeStatus === "loading" ? "Opening your assessment…" : hasSavedAssessment ? "Continue my assessment" : "Let’s begin"}
           </PrimaryButton>
           {hasSavedAssessment ? (
-            <SecondaryButton type="button" onClick={onResume} disabled={resumeStatus === "loading"}>
-              {resumeStatus === "loading" ? "Resuming..." : "Resume Assessment"}
-            </SecondaryButton>
-          ) : null}
-          {hasSavedAssessment ? (
-            <SecondaryButton type="button" onClick={onStartNew}>
-              Start New Assessment
+            <SecondaryButton type="button" onClick={onStartNew} disabled={resumeStatus === "loading"}>
+              Start a new assessment
             </SecondaryButton>
           ) : null}
         </div>
         {resumeError ? <p className="inline-error">{resumeError}</p> : null}
       </section>
 
-      <section className="hero-card hero-card--section">
-        <div className="section-copy">
-          <p className="hero-card__eyebrow">About the Assessment</p>
-          <h3>One continuous research-oriented assessment flow</h3>
-          <p className="hero-card__body">
-            The assessment combines structured screening and cognitive performance tasks in one
-            continuous session. It is designed for assessment, screening, and research use rather than standalone diagnosis.
-          </p>
-        </div>
-        <div className="overview-grid">
-          <InstructionCard
-            title="Mental Health Screening"
-            message="PHQ-9 and GAD-7 screen depressive and anxiety symptoms over the previous two weeks."
-          />
-          <InstructionCard
-            title="Cognitive Assessment"
-            message="MMSE, Memory Recall, N-Back, Boston Naming, and Trail Making capture different aspects of cognitive performance."
-          />
-          <InstructionCard
-            title="Final Analysis"
-            message="Mental-health screening and Model 1 cognitive scoring are stored on the same assessment session for later analysis."
-          />
-        </div>
-      </section>
+      <p className="welcome-note">Find a quiet, comfortable place before you begin. This assessment is a screening tool and does not provide a diagnosis.</p>
     </div>
   );
 }
@@ -381,10 +354,10 @@ function PatientInformationScreen({
   function validate(): boolean {
     const nextErrors: Partial<Record<keyof PatientFormValues, string>> = {};
     if (!values.full_name.trim()) nextErrors.full_name = "Full name is required.";
-    if (!/^\d+$/.test(values.age) || Number(values.age) <= 0) nextErrors.age = "Age must be a positive integer.";
+    if (!/^\d+$/.test(values.age) || Number(values.age) <= 0) nextErrors.age = "Please enter your age in whole years.";
     if (!values.sex.trim()) nextErrors.sex = "Sex is required.";
     if (!/^\d+$/.test(values.education_years) || Number(values.education_years) < 0) {
-      nextErrors.education_years = "Education years must be a non-negative integer.";
+      nextErrors.education_years = "Please enter a whole number, or 0 if none.";
     }
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -399,10 +372,9 @@ function PatientInformationScreen({
   return (
     <section className="form-card">
       <div className="form-card__intro">
-        <p className="hero-card__eyebrow">Patient Information</p>
-        <h2>Collect the minimum required participant details.</h2>
+        <h2>A little about you</h2>
         <p className="hero-card__body">
-          All four fields are required before the secure assessment session can be created.
+          Please fill in all four fields, then choose Continue.
         </p>
       </div>
       <form className="form-grid" onSubmit={(event) => void handleSubmit(event)}>
@@ -439,7 +411,8 @@ function PatientInformationScreen({
         </label>
 
         <label className="form-field">
-          <span>Education Years</span>
+          <span>Years of education</span>
+          <span className="field-hint">Total years at school and college. Enter 0 if none.</span>
           <input
             inputMode="numeric"
             value={values.education_years}
@@ -452,7 +425,7 @@ function PatientInformationScreen({
 
         <div className="form-actions">
           <PrimaryButton type="submit" disabled={submitStatus === "submitting"}>
-            {submitStatus === "submitting" ? "Creating secure assessment..." : "Continue"}
+            {submitStatus === "submitting" ? "Getting ready…" : "Continue"}
           </PrimaryButton>
         </div>
       </form>
@@ -539,26 +512,21 @@ function MentalHealthScreen({
   return (
     <section className="questionnaire-card">
       <div className="questionnaire-card__intro">
-        <p className="hero-card__eyebrow">Mental Health Screening</p>
-        <h2>{section === "phq9" ? "PHQ-9" : "GAD-7"}</h2>
-        <p className="hero-card__body">
-          The following questions ask about how you have been feeling over the last two weeks. These are screening
-          questionnaires and are not presented as diagnoses.
-        </p>
+        <h2>How have you been feeling?</h2>
       </div>
 
       <div className="questionnaire-card__body">
         <div className="question-meta">
-          <span>{section === "phq9" ? "PHQ-9" : "GAD-7"}</span>
+          <span>{section === "phq9" ? "Your mood" : "Worry and relaxation"}</span>
           <span>
-            Question {questionIndex + 1} of {totalQuestions}
+            Question {(section === "phq9" ? 0 : PHQ9_QUESTIONS.length) + questionIndex + 1} of {PHQ9_QUESTIONS.length + GAD7_QUESTIONS.length}
           </span>
         </div>
         <h3>How often have you been bothered by the following problem over the last 2 weeks?</h3>
         <p className="questionnaire-card__question">{questions[questionIndex]}</p>
 
         <fieldset className="questionnaire-options">
-          <legend className="sr-only">Response options</legend>
+          <legend className="sr-only">{questions[questionIndex]}</legend>
           {RESPONSE_OPTIONS.map((option) => (
             <label
               key={option.value}
@@ -571,7 +539,7 @@ function MentalHealthScreen({
                 onChange={() => setAnswer(option.value)}
               />
               <span>
-                {option.value} - {option.label}
+                {option.label}
               </span>
             </label>
           ))}
@@ -592,7 +560,7 @@ function MentalHealthScreen({
             {submitStatus === "submitting" || localSubmitting
               ? "Saving screening..."
               : section === "gad7" && questionIndex === totalQuestions - 1
-                ? "Complete Screening"
+                ? "Continue to activities"
                 : "Next"}
           </PrimaryButton>
         </div>
@@ -616,22 +584,13 @@ function CognitiveOverviewScreen({ session, onResume, onStartNew }: CognitiveOve
   return (
     <div className="page-stack">
       <section className="hero-card">
-        <p className="hero-card__eyebrow">NEURODETECT</p>
-        <h2>Cognitive Assessment Platform</h2>
+        <h2>Next, a few simple activities</h2>
         <p className="hero-card__body">
-          This preserved overview page now appears after patient information and mental-health screening.
+          You’ll answer everyday questions, remember items, match letters, name pictures, and connect circles. Each activity starts with instructions.
         </p>
-        <div className="overview-list">
-          <span>ASSESSMENT</span>
-          <strong>✓ MMSE</strong>
-          <strong>✓ Memory Recall</strong>
-          <strong>✓ N-Back</strong>
-          <strong>✓ Boston Naming</strong>
-          <strong>• Trail Making</strong>
-        </div>
         <div className="hero-card__actions">
           <PrimaryButton type="button" onClick={onResume}>
-            {session.current_stage === "COGNITIVE" ? "Start Cognitive Assessment" : "Resume Assessment"}
+            {session.current_stage === "COGNITIVE" ? "Start the activities" : "Continue my assessment"}
           </PrimaryButton>
           <SecondaryButton type="button" onClick={onStartNew}>
             Start New Assessment
@@ -641,8 +600,7 @@ function CognitiveOverviewScreen({ session, onResume, onStartNew }: CognitiveOve
 
       <section className="hero-card hero-card--section">
         <div className="section-copy">
-          <p className="hero-card__eyebrow">Cognitive Progress</p>
-          <h3>Continue the existing game sequence without changing game logic.</h3>
+          <h3>Your activities</h3>
         </div>
         <AssessmentProgress
           currentStage={currentGameStage}
@@ -700,7 +658,7 @@ function ResultsScreen({
   if (resultsStatus === "loading" || !results) {
     return (
       <div className="page-stack">
-        <LoadingState title="Loading assessment results..." message="Fetching the persisted results for this assessment session." />
+        <LoadingState title="Loading your results…" message="Please wait while we prepare your summary." />
         <section className="hero-card hero-card--section results-skeleton" aria-hidden="true">
           <div className="results-skeleton__block" />
           <div className="results-skeleton__grid">
@@ -726,12 +684,12 @@ function ResultsScreen({
         <div className="results-header">
           <div className="results-header__copy">
             <p className="hero-card__eyebrow">NEURODETECT</p>
-            <h3>Multimodal Cognitive Assessment</h3>
+            <h3>Your assessment summary</h3>
             <p className="hero-card__body">
               {showAssessmentCompleteBanner
                 ? "Assessment Completed"
                 : showAwaitingModel1Banner
-                  ? "Assessment Completed Pending Model 1"
+                  ? "Activities complete — your score is not ready yet"
                   : "Assessment Incomplete"}
             </p>
           </div>
@@ -752,11 +710,11 @@ function ResultsScreen({
 
       {showAwaitingModel1Banner ? (
         <ErrorState
-          title="Model 1 unavailable"
-          message="The completed assessment is waiting for the persisted Model 1 cognitive performance score."
+          title="Your score is not ready yet"
+          message="Your activities are complete. Choose Try again to prepare your score."
           action={
             <PrimaryButton type="button" onClick={onRetryModel1} disabled={model1Status === "loading"}>
-              {model1Status === "loading" ? "Retrying Model 1..." : "Retry Model 1"}
+              {model1Status === "loading" ? "Preparing your score…" : "Try again"}
             </PrimaryButton>
           }
         />
@@ -793,7 +751,7 @@ function ResultsScreen({
       <section className="hero-card hero-card--section">
         <div className="section-copy">
           <p className="hero-card__eyebrow">Cognitive Performance</p>
-          <h3>Model 1 - Cognitive Performance Assessment</h3>
+          <h3>Memory and thinking results</h3>
           <p className="hero-card__body">
             This score summarizes performance across the cognitive tasks included in this assessment.
           </p>
@@ -809,7 +767,6 @@ function ResultsScreen({
                 <span> / {results.model1.score_scale_max}</span>
               ) : null}
             </div>
-            <p className="results-card__meta">Model 1</p>
           </article>
 
           <article className="results-card">
@@ -845,13 +802,15 @@ function ResultsScreen({
         </div>
       </section>
 
+      <ModelEvaluation evaluation={results.model1.evaluation} />
+
       {model1Status === "error" && model1Error ? (
         <ErrorState
-          title="Unable to refresh Model 1"
+          title="We couldn’t prepare your score"
           message="The score could not be regenerated from the stored cognitive task results. Please try again."
           action={
             <PrimaryButton type="button" onClick={onRetryModel1}>
-              Retry Model 1
+              Try again
             </PrimaryButton>
           }
         />
@@ -860,7 +819,7 @@ function ResultsScreen({
       <section className="hero-card hero-card--section">
         <div className="section-copy">
           <p className="hero-card__eyebrow">Mental Health Screening</p>
-          <h3>PHQ-9 and GAD-7 Screening</h3>
+          <h3>Your mood and wellbeing</h3>
           <p className="hero-card__body">
             These questionnaires provide screening scores based on the responses provided during the assessment. They are
             not diagnostic results.
@@ -897,24 +856,6 @@ function ResultsScreen({
         </p>
       </section>
 
-      <section className="hero-card hero-card--section">
-        <div className="section-copy">
-          <p className="hero-card__eyebrow">Speech Assessment</p>
-          <h3>Coming Soon</h3>
-          <p className="hero-card__body">{results.model3.description}</p>
-        </div>
-      </section>
-
-      <section className="hero-card hero-card--section">
-        <div className="section-copy">
-          <p className="hero-card__eyebrow">Overall Multimodal Result</p>
-          <h3>Pending completion of speech analysis</h3>
-          <p className="hero-card__body">
-            This assessment combines multiple sources of information. Future versions will include speech-based analysis
-            in the final multimodal summary.
-          </p>
-        </div>
-      </section>
     </div>
   );
 }
@@ -1150,7 +1091,7 @@ function App() {
       return (
         <LoadingState
           title="Loading assessment session"
-          message="Checking the current assessment stage and restoring the participant session."
+          message="Please wait while we open your assessment."
         />
       );
     }
@@ -1265,15 +1206,16 @@ function App() {
 
   return (
     <AppShell
+      footer={<AssessmentSources />}
       header={
         <AppHeader
           title={headerCopy.title}
           subtitle={headerCopy.subtitle}
           currentStage={getTopLevelCurrentStage(route)}
           completedStages={completedTopStages}
+          showProgress={route.kind !== "home" && route.kind !== "patient" && route.kind !== "not-found"}
         />
       }
-      footer={<p className="app-footer__text">One assessment session, one patient, one assessment ID.</p>}
     >
       {content}
     </AppShell>

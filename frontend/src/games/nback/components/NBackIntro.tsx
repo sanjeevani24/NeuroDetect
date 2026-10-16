@@ -9,7 +9,7 @@ interface NBackIntroProps {
 
 export function NBackIntro({ onBegin }: NBackIntroProps) {
   return (
-    <GameShell title="N-Back" phase="Introduction" progress="03 / 03">
+    <GameShell title="Letter matching" phase="Let’s practise first">
       <div className="nback-screen">
         <InstructionCard
           title="How this task works"
@@ -22,7 +22,7 @@ export function NBackIntro({ onBegin }: NBackIntroProps) {
           />
           <InstructionCard
             title="How to respond"
-            message="Use MATCH if the letter is the same as two trials ago. Use NO MATCH if it is different."
+            message="Choose MATCH if the letter is the same as two letters ago. Choose NO MATCH if it is different."
           />
           <InstructionCard
             title="Before the assessment"

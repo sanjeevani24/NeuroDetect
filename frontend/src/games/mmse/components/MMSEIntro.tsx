@@ -4,16 +4,16 @@ import { GameShell } from "../../../components/ui/GameShell";
 
 export function MMSEIntro({ onStart }: { onStart: () => void }) {
   return (
-    <GameShell title="MMSE" phase="Introduction" progress="01 / 07">
+    <GameShell title="Everyday questions" phase="Before you begin">
       <div className="mmse-stack">
         <InstructionCard
-          title="Behavioural assessment prototype"
-          message="This prototype covers orientation, registration, attention, language, delayed recall, and command following. Please answer carefully and continue when ready."
+          title="Answer a few everyday questions"
+          message="You’ll answer questions about the day and where you are, remember words, and follow simple instructions. Read each instruction carefully, then do your best."
         />
       </div>
       <div className="mmse-actions">
         <PrimaryButton type="button" onClick={onStart}>
-          Begin MMSE
+          Begin questions
         </PrimaryButton>
       </div>
     </GameShell>

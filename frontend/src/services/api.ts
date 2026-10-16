@@ -97,6 +97,20 @@ export interface ResultsModel1Summary {
   feature_count: number | null;
   model_type: string | null;
   score_scale_max: number | null;
+  evaluation?: ModelEvaluationSummary | null;
+}
+
+export interface ModelEvaluationSummary {
+  source: string;
+  data_type: string | null;
+  clinical_validation: boolean | null;
+  test_samples: number | null;
+  test_metrics: {
+    mae: number | null;
+    rmse: number | null;
+    r2: number | null;
+    median_absolute_error: number | null;
+  };
 }
 
 export interface ScreeningScoreSummary {
