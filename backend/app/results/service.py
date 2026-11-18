@@ -1,0 +1,250 @@
+from __future__ import annotations
+
+import json
+import math
+from dataclasses import dataclass
+
+from app.assessments.schemas import AssessmentStage
+from app.ml.model1.config import MODEL_METADATA_PATH
+from app.ml.model1.exceptions import Model1SchemaNotReadyError
+from app.repositories.results_repository import ResultsRepository
+from app.results.schemas import ModelEvaluationSummary, RegressionTestMetrics
+
+
+RESULT_COMPONENTS: list[tuple[str, str]] = [
+    ("phq9", "PHQ-9"),
+    ("gad7", "GAD-7"),
+    ("mmse", "MMSE"),
+    ("memory", "Memory Recall"),
+    ("nback", "N-Back"),
+    ("boston_naming", "Boston Naming"),
+    ("trail_making", "Trail Making"),
+    ("model1", "Model 1"),
+]
+
+
+class AssessmentResultsNotFoundError(Exception):
+    """Raised when the assessment session cannot be found."""
+
+
+@dataclass(frozen=True)
+class Model1DisplayMetadata:
+    model_name: str | None
+    model_version: str | None
+    feature_count: int | None
+    model_type: str | None
+    score_scale_max: float | None
+    evaluation: ModelEvaluationSummary | None = None
+
+
+class ResultsService:
+    def __init__(self, repository: ResultsRepository):
+        self._repository = repository
+        self._model1_metadata = self._load_model1_metadata()
+
+    def get_results(self, assessment_id: str) -> dict:
+        session = self._repository.get_assessment_session(assessment_id)
+        if session is None:
+            raise AssessmentResultsNotFoundError
+
+        phq9_result = self._repository.get_phq9_result(assessment_id)
+        gad7_result = self._repository.get_gad7_result(assessment_id)
+        try:
+            model1_result = self._repository.get_model1_result(assessment_id)
+        except Model1SchemaNotReadyError:
+            raise
+
+        speech_result = None
+        if hasattr(self._repository, "get_speech_result"):
+            speech_result = self._repository.get_speech_result(assessment_id)
+
+        completed_stages = set(session["completed_stages"])
+        checklist = [
+            {"key": "phq9", "label": "PHQ-9", "completed": phq9_result is not None},
+            {"key": "gad7", "label": "GAD-7", "completed": gad7_result is not None},
+            {"key": "mmse", "label": "MMSE", "completed": "MMSE" in completed_stages},
+            {"key": "memory", "label": "Memory Recall", "completed": "MEMORY" in completed_stages},
+            {"key": "nback", "label": "N-Back", "completed": "NBACK" in completed_stages},
+            {"key": "boston_naming", "label": "Boston Naming", "completed": "BOSTON_NAMING" in completed_stages},
+            {"key": "trail_making", "label": "Trail Making", "completed": "TRAIL_MAKING" in completed_stages},
+            {"key": "model1", "label": "Model 1", "completed": model1_result is not None},
+        ]
+        if "SPEECH" in completed_stages or speech_result is not None:
+            checklist.append({"key": "speech", "label": "Speech Assessment", "completed": speech_result is not None})
+
+        missing_components = [item["label"] for item in checklist if not item["completed"]]
+        non_model1_components_complete = all(item["completed"] for item in checklist if item["key"] != "model1")
+
+        if model1_result is not None and not missing_components:
+            status = "completed"
+            current_stage: AssessmentStage = "RESULTS"
+            next_stage: AssessmentStage = "RESULTS"
+            completion_message = "All currently available assessment components have been completed."
+        elif non_model1_components_complete:
+            status = "awaiting_model1"
+            current_stage = "RESULTS"
+            next_stage = "RESULTS"
+            completion_message = "The assessment is complete except for the stored Model 1 cognitive performance result."
+        else:
+            status = "incomplete"
+            current_stage = session["current_stage"]
+            next_stage = session["current_stage"]
+            completion_message = "Some required assessment components are still incomplete."
+
+        if speech_result:
+            p_hc = self._to_float(speech_result, "probability_hc") if speech_result.get("probability_hc") is not None else self._to_float(speech_result, "hc_probability")
+            p_mci = self._to_float(speech_result, "probability_mci") if speech_result.get("probability_mci") is not None else self._to_float(speech_result, "mci_probability")
+            p_dem = self._to_float(speech_result, "probability_dementia") if speech_result.get("probability_dementia") is not None else self._to_float(speech_result, "dementia_probability")
+
+            model3_data = {
+                "available": True,
+                "status": speech_result.get("inference_status") or "completed",
+                "title": "Speech Assessment",
+                "description": speech_result.get("disclaimer"),
+                "predicted_class": speech_result.get("predicted_class"),
+                "probability_hc": p_hc,
+                "hc_probability": p_hc,
+                "probability_mci": p_mci,
+                "mci_probability": p_mci,
+                "probability_dementia": p_dem,
+                "dementia_probability": p_dem,
+                "probabilities": {
+                    "HC": p_hc,
+                    "MCI": p_mci,
+                    "Dementia": p_dem,
+                }
+                if p_hc is not None
+                else None,
+                "branch_probabilities": speech_result.get("branch_probabilities"),
+                "components_used": speech_result.get("components_used"),
+                "model_name": speech_result.get("model_name") or "NeuroDetect Model 3 - PROCESS-2 CTD Classifier",
+                "model_version": speech_result.get("model_version"),
+                "disclaimer": speech_result.get("disclaimer"),
+                "error_message": speech_result.get("error_message"),
+                "transcription_engine": speech_result.get("transcription_engine"),
+            }
+        else:
+            model3_data = {
+                "available": False,
+                "status": "pending",
+                "title": "Speech Assessment",
+                "description": "Speech-based cognitive analysis will be added in a future version of NeuroDetect.",
+            }
+
+        return {
+            "assessment_id": session["assessment_id"],
+            "assessment_short_id": self._short_assessment_id(session["assessment_id"]),
+            "participant_name": session["full_name"],
+            "status": status,
+            "current_stage": current_stage,
+            "next_stage": next_stage,
+            "completion_message": completion_message,
+            "model1": {
+                "available": model1_result is not None,
+                "cognitive_performance_score": self._to_float(model1_result, "cognitive_performance_score"),
+                "model_name": (model1_result or {}).get("model_name") or self._model1_metadata.model_name,
+                "model_version": (model1_result or {}).get("model_version") or self._model1_metadata.model_version,
+                "feature_count": self._model1_metadata.feature_count,
+                "model_type": self._model1_metadata.model_type,
+                "score_scale_max": self._model1_metadata.score_scale_max,
+                # Evaluation belongs to the packaged model version, not an older saved prediction.
+                "evaluation": self._model1_metadata.evaluation
+                if model1_result is None or model1_result.get("model_version") == self._model1_metadata.model_version
+                else None,
+            },
+            "mental_health": {
+                "phq9": {
+                    "available": phq9_result is not None,
+                    "score": self._to_int(phq9_result, "total_score"),
+                    "score_max": 27,
+                    "severity": self._to_str(phq9_result, "severity"),
+                },
+                "gad7": {
+                    "available": gad7_result is not None,
+                    "score": self._to_int(gad7_result, "total_score"),
+                    "score_max": 21,
+                    "severity": self._to_str(gad7_result, "severity"),
+                },
+            },
+            "model3": model3_data,
+            "fusion": {
+                "available": False,
+                "status": "pending",
+                "title": "Overall Multimodal Result",
+                "description": "Pending completion of speech analysis.",
+            },
+            "completed_components": checklist,
+            "missing_components": missing_components,
+        }
+
+    @staticmethod
+    def _short_assessment_id(assessment_id: str) -> str:
+        return f"{assessment_id[:4]}...{assessment_id[-4:]}"
+
+    @staticmethod
+    def _to_float(row: dict | None, key: str) -> float | None:
+        if not row or row.get(key) is None:
+            return None
+        return float(row[key])
+
+    @staticmethod
+    def _to_int(row: dict | None, key: str) -> int | None:
+        if not row or row.get(key) is None:
+            return None
+        return int(row[key])
+
+    @staticmethod
+    def _to_str(row: dict | None, key: str) -> str | None:
+        if not row or row.get(key) is None:
+            return None
+        return str(row[key])
+
+    @staticmethod
+    def _load_model1_metadata() -> Model1DisplayMetadata:
+        try:
+            payload = json.loads(MODEL_METADATA_PATH.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return Model1DisplayMetadata(None, None, None, None, None)
+
+        score_scale_max = payload.get("target_max")
+        if score_scale_max is None and payload.get("target_range"):
+            target_range = payload["target_range"]
+            if isinstance(target_range, list) and len(target_range) == 2:
+                score_scale_max = float(target_range[1])
+
+        return Model1DisplayMetadata(
+            model_name=payload.get("model_name"),
+            model_version=payload.get("model_version"),
+            feature_count=int(payload["feature_count"]) if payload.get("feature_count") is not None else None,
+            model_type="Cognitive performance regression",
+            score_scale_max=float(score_scale_max) if score_scale_max is not None else None,
+            evaluation=ResultsService._parse_model_evaluation(payload),
+        )
+
+    @staticmethod
+    def _parse_model_evaluation(payload: dict) -> ModelEvaluationSummary | None:
+        metrics = payload.get("test_metrics")
+        if not isinstance(metrics, dict):
+            return None
+
+        def metric(key: str, *, is_r2: bool = False) -> float | None:
+            value = metrics.get(key)
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                return None
+            if (is_r2 and value > 1) or (not is_r2 and value < 0):
+                return None
+            return float(value)
+
+        test_rows = payload.get("test_rows")
+        return ModelEvaluationSummary(
+            data_type=payload.get("data_type") if isinstance(payload.get("data_type"), str) else None,
+            clinical_validation=payload.get("clinical_validation")
+            if isinstance(payload.get("clinical_validation"), bool) else None,
+            test_samples=test_rows if type(test_rows) is int and test_rows > 0 else None,
+            test_metrics=RegressionTestMetrics(
+                mae=metric("MAE"),
+                rmse=metric("RMSE"),
+                r2=metric("R2", is_r2=True),
+                median_absolute_error=metric("MedianAE"),
+            ),
+        )

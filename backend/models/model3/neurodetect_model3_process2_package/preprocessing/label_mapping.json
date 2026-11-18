@@ -1,0 +1,17 @@
+{
+  "id_to_label": {
+    "0": "HC",
+    "1": "MCI",
+    "2": "Dementia"
+  },
+  "label_to_id": {
+    "HC": 0,
+    "MCI": 1,
+    "Dementia": 2
+  },
+  "dataset_raw_label_map": {
+    "Dementia": "Dementia",
+    "HC": "HC",
+    "MCI": "MCI"
+  }
+}

@@ -1,0 +1,41 @@
+create table if not exists boston_naming_results (
+    boston_id uuid primary key default gen_random_uuid(),
+    assessment_id uuid not null references assessments (assessment_id) on delete cascade,
+
+    naming_accuracy double precision not null check (naming_accuracy between 0 and 1),
+    uncued_accuracy double precision not null check (uncued_accuracy between 0 and 1),
+    cued_accuracy double precision null check (cued_accuracy between 0 and 1),
+    semantic_cue_rate double precision not null check (semantic_cue_rate between 0 and 1),
+    phonemic_cue_rate double precision not null check (phonemic_cue_rate between 0 and 1),
+    total_cue_rate double precision not null check (total_cue_rate between 0 and 1),
+    mean_response_latency_ms double precision null check (mean_response_latency_ms >= 0),
+    median_response_latency_ms double precision null check (median_response_latency_ms >= 0),
+    response_latency_std_ms double precision not null check (response_latency_std_ms >= 0),
+    hesitation_duration_ms double precision not null check (hesitation_duration_ms >= 0),
+    hesitation_variability_ms double precision not null check (hesitation_variability_ms >= 0),
+    omission_errors integer not null check (omission_errors >= 0),
+    semantic_errors integer not null check (semantic_errors >= 0),
+    phonemic_errors integer not null check (phonemic_errors >= 0),
+    visual_errors integer not null check (visual_errors >= 0),
+    unrelated_errors integer not null check (unrelated_errors >= 0),
+    ambiguous_errors integer not null check (ambiguous_errors >= 0),
+    self_correction_rate double precision not null check (self_correction_rate between 0 and 1),
+    successful_self_correction_rate double precision null check (successful_self_correction_rate between 0 and 1),
+    mean_response_duration_ms double precision null check (mean_response_duration_ms >= 0),
+    response_duration_std_ms double precision not null check (response_duration_std_ms >= 0),
+    correct_response_latency_ms double precision null check (correct_response_latency_ms >= 0),
+    incorrect_response_latency_ms double precision null check (incorrect_response_latency_ms >= 0),
+    difficulty_adjusted_accuracy double precision not null check (difficulty_adjusted_accuracy between 0 and 1),
+    easy_accuracy double precision null check (easy_accuracy between 0 and 1),
+    medium_accuracy double precision null check (medium_accuracy between 0 and 1),
+    hard_accuracy double precision null check (hard_accuracy between 0 and 1),
+    naming_consistency double precision not null check (naming_consistency between 0 and 1),
+    fatigue_trend double precision not null,
+    completion_time_ms double precision not null check (completion_time_ms > 0),
+    raw_trials jsonb not null default '[]'::jsonb,
+    created_at timestamptz not null default now(),
+
+    constraint boston_naming_results_assessment_id_unique unique (assessment_id)
+);
+
+create index if not exists idx_boston_naming_results_assessment_id on boston_naming_results (assessment_id);

@@ -1,0 +1,107 @@
+{
+  "model_version": "model3-process2-ctd-20261116-full",
+  "mode": "full",
+  "final_model": "fusion",
+  "fusion_inputs": [
+    "audio_embedding",
+    "acoustic",
+    "transcript"
+  ],
+  "fusion_variant": "audio+acoustic+transcript",
+  "model_files": {
+    "audio_embedding": "audio_embedding_classifier.joblib",
+    "acoustic": "acoustic_classifier.joblib",
+    "transcript": "transcript_classifier.joblib",
+    "fusion": "fusion_classifier.joblib"
+  },
+  "encoder_revisions": {
+    "facebook/wav2vec2-base": "0b5b8e868dd84f03fd87d01f9c4ff0f080fecfe8",
+    "distilbert-base-uncased": "12040accade4e8a0f71eabdb258fecc2e7e948be"
+  },
+  "acoustic_feature_names": [
+    "duration_s",
+    "speaking_ratio",
+    "silence_total_s",
+    "pause_count",
+    "pause_mean_s",
+    "pause_rate_per_min",
+    "rms_mean",
+    "rms_std",
+    "rms_p95",
+    "f0_mean",
+    "f0_std",
+    "f0_median",
+    "f0_range_p5_p95",
+    "voiced_fraction",
+    "words_per_min",
+    "articulation_rate_wpm",
+    "mfcc0_mean",
+    "mfcc0_std",
+    "mfcc1_mean",
+    "mfcc1_std",
+    "mfcc2_mean",
+    "mfcc2_std",
+    "mfcc3_mean",
+    "mfcc3_std",
+    "mfcc4_mean",
+    "mfcc4_std",
+    "mfcc5_mean",
+    "mfcc5_std",
+    "mfcc6_mean",
+    "mfcc6_std",
+    "mfcc7_mean",
+    "mfcc7_std",
+    "mfcc8_mean",
+    "mfcc8_std",
+    "mfcc9_mean",
+    "mfcc9_std",
+    "mfcc10_mean",
+    "mfcc10_std",
+    "mfcc11_mean",
+    "mfcc11_std",
+    "mfcc12_mean",
+    "mfcc12_std"
+  ],
+  "linguistic_feature_names": [
+    "word_count",
+    "sentence_count",
+    "avg_sentence_len",
+    "type_token_ratio",
+    "mattr_50",
+    "unique_words",
+    "repeated_word_count",
+    "filler_count",
+    "filler_ratio",
+    "pronoun_ratio",
+    "mean_word_len",
+    "subordination_ratio"
+  ],
+  "task": "CTD",
+  "seed": 42,
+  "best_params": {
+    "audio_embedding": {
+      "clf": "LogisticRegression(class_weight='balanced', max_iter=3000)",
+      "clf__C": "0.01"
+    },
+    "acoustic": {
+      "clf": "SVC(class_weight='balanced', probability=True, random_state=42)",
+      "clf__C": "10",
+      "clf__kernel": "rbf"
+    },
+    "transcript": {
+      "clf": "LogisticRegression(class_weight='balanced', max_iter=3000)",
+      "clf__C": "0.001"
+    },
+    "fusion": {
+      "clf__C": "0.01"
+    }
+  },
+  "outer_cv_folds": 5,
+  "inner_cv_folds": 5,
+  "feature_order": {
+    "audio_embedding": "768 Wav2Vec2 dims",
+    "acoustic": "ACOUSTIC_NAMES order",
+    "transcript": "768 DistilBERT dims then LING_NAMES order",
+    "fusion": "concatenated branch probabilities in fusion_inputs order, classes [HC, MCI, Dementia]"
+  }
+}
