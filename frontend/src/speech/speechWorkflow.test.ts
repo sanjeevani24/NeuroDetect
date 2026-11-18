@@ -79,4 +79,72 @@ describe("Speech Workflow and Route Logic", () => {
     expect(formatDuration(65)).toBe("1:05");
     expect(formatDuration(180)).toBe("3:00");
   });
+
+  it("handles final fusion result structure and provisional status", async () => {
+    const mockFusion: api.FusionResultSummary = {
+      available: true,
+      status: "provisional",
+      title: "Final Assessment Conclusion",
+      interpretation: "NO_ELEVATED_INDICATORS",
+      interpretation_label: "No Elevated Indicators Detected",
+      conclusion: "No Elevated Indicators Detected",
+      verification_status: "PROVISIONAL",
+      provisional_warning: "Awaiting ASR verification",
+      recommended_next_step: "Continue routine wellness checkups and healthy brain habits.",
+      recommended_steps: [
+        "Routine wellness: Continue annual wellness checkups.",
+      ],
+      key_findings: {
+        cognitive_games: {
+          title: "Cognitive Games",
+          status_label: "Within Expected Range",
+          summary: "Tasks were within expected range.",
+          badge_variant: "success",
+        },
+        speech_analysis: {
+          title: "Speech Analysis",
+          status_label: "Healthy Control (HC) — 85.0% (Awaiting Clinician Verification)",
+          summary: "Speech analysis produced HC as leading prediction.",
+          badge_variant: "warning",
+        },
+        mental_health: {
+          title: "Mental Health Context",
+          status_label: "Minimal Symptoms (PHQ-9: Minimal, GAD-7: Minimal)",
+          summary: "Mood and anxiety scores are within minimal range.",
+          badge_variant: "neutral",
+        },
+      },
+      model1_score: 83.5,
+      model1_category: "NORMAL",
+      model1_weight_percent: 50,
+      model3_predicted_class: "HC",
+      model3_category: "HC_DOMINANT",
+      model3_weight_percent: 50,
+      model3_probabilities: { HC: 0.85, MCI: 0.10, Dementia: 0.05 },
+      mental_health_context: {
+        phq9_score: 3,
+        phq9_severity: "Minimal",
+        gad7_score: 2,
+        gad7_severity: "Minimal",
+        depression_elevated: false,
+        anxiety_elevated: false,
+        contextual_flags: [],
+      },
+      contextual_flags: [],
+      rules_triggered: ["RULE_FUSION_NORMAL_HC"],
+      explanation: "Both indicators normal.",
+      disclaimer: "Research screening prototype.",
+    };
+
+    const spy = vi.spyOn(api, "getAssessmentFusion").mockResolvedValue(mockFusion);
+    const res = await api.getAssessmentFusion(assessmentId);
+
+    expect(spy).toHaveBeenCalledOnce();
+    expect(res.interpretation).toBe("NO_ELEVATED_INDICATORS");
+    expect(res.verification_status).toBe("PROVISIONAL");
+    expect(res.model1_weight_percent).toBe(50);
+    expect(res.model3_weight_percent).toBe(50);
+    expect(res.model1_category).toBe("NORMAL");
+    expect(res.model3_category).toBe("HC_DOMINANT");
+  });
 });

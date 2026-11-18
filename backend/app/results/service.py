@@ -5,6 +5,7 @@ import math
 from dataclasses import dataclass
 
 from app.assessments.schemas import AssessmentStage
+from app.fusion.service import FusionService, get_fusion_service
 from app.ml.model1.config import MODEL_METADATA_PATH
 from app.ml.model1.exceptions import Model1SchemaNotReadyError
 from app.repositories.results_repository import ResultsRepository
@@ -38,9 +39,10 @@ class Model1DisplayMetadata:
 
 
 class ResultsService:
-    def __init__(self, repository: ResultsRepository):
+    def __init__(self, repository: ResultsRepository, fusion_service: FusionService | None = None):
         self._repository = repository
         self._model1_metadata = self._load_model1_metadata()
+        self._fusion_service = fusion_service or get_fusion_service()
 
     def get_results(self, assessment_id: str) -> dict:
         session = self._repository.get_assessment_session(assessment_id)
@@ -131,6 +133,42 @@ class ResultsService:
                 "description": "Speech-based cognitive analysis will be added in a future version of NeuroDetect.",
             }
 
+        model1_data = {
+            "available": model1_result is not None,
+            "cognitive_performance_score": self._to_float(model1_result, "cognitive_performance_score"),
+            "model_name": (model1_result or {}).get("model_name") or self._model1_metadata.model_name,
+            "model_version": (model1_result or {}).get("model_version") or self._model1_metadata.model_version,
+            "feature_count": self._model1_metadata.feature_count,
+            "model_type": self._model1_metadata.model_type,
+            "score_scale_max": self._model1_metadata.score_scale_max,
+            # Evaluation belongs to the packaged model version, not an older saved prediction.
+            "evaluation": self._model1_metadata.evaluation
+            if model1_result is None or model1_result.get("model_version") == self._model1_metadata.model_version
+            else None,
+        }
+
+        mental_health_data = {
+            "phq9": {
+                "available": phq9_result is not None,
+                "score": self._to_int(phq9_result, "total_score"),
+                "score_max": 27,
+                "severity": self._to_str(phq9_result, "severity"),
+            },
+            "gad7": {
+                "available": gad7_result is not None,
+                "score": self._to_int(gad7_result, "total_score"),
+                "score_max": 21,
+                "severity": self._to_str(gad7_result, "severity"),
+            },
+        }
+
+        fusion_summary = self._fusion_service.evaluate(
+            model1_data=model1_data,
+            model3_data=model3_data,
+            mental_health_data=mental_health_data,
+            speech_inference_status=speech_result.get("inference_status") if speech_result else None,
+        )
+
         return {
             "assessment_id": session["assessment_id"],
             "assessment_short_id": self._short_assessment_id(session["assessment_id"]),
@@ -139,40 +177,10 @@ class ResultsService:
             "current_stage": current_stage,
             "next_stage": next_stage,
             "completion_message": completion_message,
-            "model1": {
-                "available": model1_result is not None,
-                "cognitive_performance_score": self._to_float(model1_result, "cognitive_performance_score"),
-                "model_name": (model1_result or {}).get("model_name") or self._model1_metadata.model_name,
-                "model_version": (model1_result or {}).get("model_version") or self._model1_metadata.model_version,
-                "feature_count": self._model1_metadata.feature_count,
-                "model_type": self._model1_metadata.model_type,
-                "score_scale_max": self._model1_metadata.score_scale_max,
-                # Evaluation belongs to the packaged model version, not an older saved prediction.
-                "evaluation": self._model1_metadata.evaluation
-                if model1_result is None or model1_result.get("model_version") == self._model1_metadata.model_version
-                else None,
-            },
-            "mental_health": {
-                "phq9": {
-                    "available": phq9_result is not None,
-                    "score": self._to_int(phq9_result, "total_score"),
-                    "score_max": 27,
-                    "severity": self._to_str(phq9_result, "severity"),
-                },
-                "gad7": {
-                    "available": gad7_result is not None,
-                    "score": self._to_int(gad7_result, "total_score"),
-                    "score_max": 21,
-                    "severity": self._to_str(gad7_result, "severity"),
-                },
-            },
+            "model1": model1_data,
+            "mental_health": mental_health_data,
             "model3": model3_data,
-            "fusion": {
-                "available": False,
-                "status": "pending",
-                "title": "Overall Multimodal Result",
-                "description": "Pending completion of speech analysis.",
-            },
+            "fusion": fusion_summary.model_dump(),
             "completed_components": checklist,
             "missing_components": missing_components,
         }

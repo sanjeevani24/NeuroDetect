@@ -21,8 +21,10 @@ import {
   predictModel1,
   type AssessmentResults,
   type AssessmentSession,
+  type FusionResultSummary,
   type GAD7Answers,
   type MentalHealthCompletionResult,
+  type Model3ResultSummary,
   type PHQ9Answers,
 } from "./services/api";
 
@@ -140,6 +142,22 @@ function formatSeverityLabel(value: string | null | undefined): string {
     .filter(Boolean)
     .map((part) => part[0].toUpperCase() + part.slice(1).toLowerCase())
     .join(" ");
+}
+
+function getFusionBadgeClass(interpretation: string | undefined): string {
+  switch (interpretation) {
+    case "NO_ELEVATED_INDICATORS":
+      return "fusion-badge--no-elevated";
+    case "FURTHER_ASSESSMENT":
+    case "BORDERLINE_INDICATORS":
+    case "CONFLICTING_INDICATORS":
+      return "fusion-badge--borderline";
+    case "ELEVATED_COGNITIVE_INDICATORS":
+    case "ELEVATED_INDICATORS":
+      return "fusion-badge--elevated";
+    default:
+      return "fusion-badge--insufficient";
+  }
 }
 
 function formatAssessmentError(error: unknown, fallback: string): string {
@@ -690,6 +708,86 @@ function ResultsScreen({
   const showAssessmentCompleteBanner = results.status === "completed";
   const showAwaitingModel1Banner = results.status === "awaiting_model1";
 
+  const isFusionAvailable = "interpretation" in results.fusion && results.fusion.available;
+  const fusionData: FusionResultSummary | null = isFusionAvailable ? (results.fusion as FusionResultSummary) : null;
+  const isProvisional = fusionData?.verification_status === "PROVISIONAL";
+
+  const model3Data: Model3ResultSummary | null =
+    results.model3 && "predicted_class" in results.model3 && results.model3.available
+      ? (results.model3 as Model3ResultSummary)
+      : null;
+
+  const conclusionTitle = fusionData?.conclusion || fusionData?.interpretation_label || "Assessment Summary";
+  const primaryRecommendation =
+    fusionData?.recommended_next_step ||
+    (results.missing_components.length > 0
+      ? "Complete remaining assessment activities to obtain an overall multimodal synthesis."
+      : "Consult a healthcare provider for professional clinical evaluation.");
+
+  const recommendedSteps: string[] =
+    fusionData?.recommended_steps && fusionData.recommended_steps.length > 0
+      ? fusionData.recommended_steps
+      : [
+          ...(isProvisional
+            ? ["Verify automated speech transcript: Speech analysis is currently based on automated speech recognition (ASR) and requires clinical verification."]
+            : []),
+          ...(results.missing_components.length > 0
+            ? [`Complete pending tasks: Return to the assessment dashboard to complete ${results.missing_components.join(", ")}.`]
+            : []),
+          "Discuss these preliminary screening findings with a qualified healthcare specialist.",
+        ];
+
+  const keyFindings = fusionData?.key_findings;
+
+  const cognitiveFinding = keyFindings?.cognitive_games ?? {
+    title: "Cognitive Games",
+    status_label: results.model1.available
+      ? "model1_category" in results.fusion && results.fusion.model1_category === "NORMAL"
+        ? "Within Expected Range"
+        : "model1_category" in results.fusion && results.fusion.model1_category === "BORDERLINE"
+        ? "Borderline Performance"
+        : "Below Expected Range"
+      : "Incomplete",
+    summary: results.model1.available
+      ? "Cognitive task performance evaluated across memory, attention, and executive function."
+      : "Cognitive games have not been completed.",
+    badge_variant: results.model1.available
+      ? "model1_category" in results.fusion && results.fusion.model1_category === "NORMAL"
+        ? "success"
+        : "model1_category" in results.fusion && results.fusion.model1_category === "BORDERLINE"
+        ? "warning"
+        : "error"
+      : "neutral",
+  };
+
+  const speechFinding = keyFindings?.speech_analysis ?? {
+    title: "Speech Analysis",
+    status_label:
+      model3Data && model3Data.available
+        ? `${model3Data.predicted_class ?? "Speech Analysis"}${isProvisional ? " (Awaiting Clinician Verification)" : " (Verified)"}`
+        : "Incomplete",
+    summary:
+      model3Data && model3Data.available
+        ? isProvisional
+          ? "Speech analysis produced leading classification based on automated transcript awaiting verification."
+          : "Speech analysis produced leading classification based on verified acoustic and linguistic features."
+        : "Speech assessment has not been completed.",
+    badge_variant: model3Data && model3Data.available ? (isProvisional ? "warning" : "success") : "neutral",
+  };
+
+  const mentalHealthFinding = keyFindings?.mental_health ?? {
+    title: "Mental Health Context",
+    status_label: results.mental_health.phq9.available
+      ? `PHQ-9: ${formatSeverityLabel(results.mental_health.phq9.severity)}, GAD-7: ${formatSeverityLabel(results.mental_health.gad7.severity)}`
+      : "Not Screened",
+    summary: "Screening scores provide non-cognitive clinical context for overall performance.",
+    badge_variant:
+      (results.mental_health.phq9.score !== null && results.mental_health.phq9.score >= 10) ||
+      (results.mental_health.gad7.score !== null && results.mental_health.gad7.score >= 10)
+        ? "warning"
+        : "neutral",
+  };
+
   return (
     <div className="page-stack">
       <section className="hero-card hero-card--section">
@@ -760,87 +858,354 @@ function ResultsScreen({
         </section>
       ) : null}
 
-      {/* 1. Final Fusion Result */}
-      <section className="hero-card hero-card--section">
+      {/* SECTION A: FINAL ASSESSMENT CONCLUSION */}
+      <section className="hero-card hero-card--section results-hero-section" aria-labelledby="conclusion-section-title">
         <div className="section-copy">
-          <p className="hero-card__eyebrow">Multimodal Assessment</p>
-          <h3>Final fusion result</h3>
+          <p className="hero-card__eyebrow">NEURODETECT MULTIMODAL SYNTHESIS</p>
+          <div className="results-conclusion-header">
+            <h2 id="conclusion-section-title" className="results-conclusion-title">
+              {conclusionTitle}
+            </h2>
+            <div className="results-conclusion-badges">
+              {isFusionAvailable && (
+                <span className={`fusion-badge ${isProvisional ? "fusion-badge--provisional" : "fusion-badge--complete"}`}>
+                  {isProvisional ? "⚠️ Provisional Assessment" : "✓ Verified Assessment"}
+                </span>
+              )}
+              {isFusionAvailable && fusionData && (
+                <span className="fusion-badge fusion-badge--source">
+                  {isProvisional ? "Automated Speech Transcript" : "Clinically Verified Transcript"}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <p className="results-conclusion-explanation">
+            {fusionData?.explanation ||
+              ("description" in results.fusion && results.fusion.description) ||
+              "The assessment combines cognitive performance, speech patterns, and mental health context to provide an integrated evaluation."}
+          </p>
+
+          {isProvisional && fusionData?.provisional_warning && (
+            <div className="fusion-provisional-alert" role="alert">
+              <strong>Verification Notice:</strong> {fusionData.provisional_warning}
+            </div>
+          )}
+
+          {primaryRecommendation && (
+            <div className="results-primary-rec-card">
+              <span className="results-primary-rec-badge">Recommended Next Step</span>
+              <p className="results-primary-rec-text">{primaryRecommendation}</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* SECTION B: KEY FINDINGS */}
+      <section className="hero-card hero-card--section" aria-labelledby="key-findings-title">
+        <div className="section-copy">
+          <p className="hero-card__eyebrow">Overview</p>
+          <h3 id="key-findings-title">Key findings</h3>
           <p className="hero-card__body">
-            Integration across cognitive performance, mental health, and speech assessment.
+            Summary of the three primary assessment streams: cognitive task performance, acoustic-linguistic speech analysis, and affective context.
           </p>
         </div>
-        <div className="results-grid">
-          <article className="results-card results-card--score">
-            <p className="results-card__label">Overall Multimodal Status</p>
-            <div className="results-card__score results-card__score--placeholder">
-              Pending Fusion
+
+        <div className="key-findings-grid">
+          {/* 1. Cognitive Games */}
+          <article className={`key-finding-card key-finding-card--${cognitiveFinding.badge_variant}`}>
+            <div className="key-finding-card__header">
+              <span className="key-finding-card__stream">Modality 1</span>
+              <h4 className="key-finding-card__title">{cognitiveFinding.title}</h4>
             </div>
-            <p className="results-card__meta">
-              <strong>Status:</strong> {formatSeverityLabel(results.fusion?.status || "pending")}
-            </p>
-            <p className="results-card__hint">
-              {results.fusion?.description || "Pending separate fusion-engine integration. Individual component results are presented below."}
-            </p>
+            <div className="key-finding-card__status">
+              <span className={`key-finding-badge key-finding-badge--${cognitiveFinding.badge_variant}`}>
+                {cognitiveFinding.status_label}
+              </span>
+            </div>
+            <p className="key-finding-card__summary">{cognitiveFinding.summary}</p>
+          </article>
+
+          {/* 2. Speech Analysis */}
+          <article className={`key-finding-card key-finding-card--${speechFinding.badge_variant}`}>
+            <div className="key-finding-card__header">
+              <span className="key-finding-card__stream">Modality 2</span>
+              <h4 className="key-finding-card__title">{speechFinding.title}</h4>
+            </div>
+            <div className="key-finding-card__status">
+              <span className={`key-finding-badge key-finding-badge--${speechFinding.badge_variant}`}>
+                {speechFinding.status_label}
+              </span>
+            </div>
+            <p className="key-finding-card__summary">{speechFinding.summary}</p>
+          </article>
+
+          {/* 3. Mental Health Context */}
+          <article className={`key-finding-card key-finding-card--${mentalHealthFinding.badge_variant}`}>
+            <div className="key-finding-card__header">
+              <span className="key-finding-card__stream">Clinical Context</span>
+              <h4 className="key-finding-card__title">{mentalHealthFinding.title}</h4>
+            </div>
+            <div className="key-finding-card__status">
+              <span className={`key-finding-badge key-finding-badge--${mentalHealthFinding.badge_variant}`}>
+                {mentalHealthFinding.status_label}
+              </span>
+            </div>
+            <p className="key-finding-card__summary">{mentalHealthFinding.summary}</p>
           </article>
         </div>
       </section>
 
-      {/* 2. Model 1 – Cognitive Performance */}
-      <section className="hero-card hero-card--section">
+      {/* SECTION C: RECOMMENDED NEXT STEPS */}
+      <section className="hero-card hero-card--section" aria-labelledby="next-steps-title">
         <div className="section-copy">
-          <p className="hero-card__eyebrow">Cognitive Performance</p>
-          <h3>Memory and thinking results</h3>
+          <p className="hero-card__eyebrow">Actionable Guidance</p>
+          <h3 id="next-steps-title">Recommended next steps</h3>
           <p className="hero-card__body">
-            This score summarizes performance across the cognitive tasks included in this assessment.
+            Next steps tailored to this assessment profile, including verification status, indicator consistency, and symptom context.
           </p>
         </div>
-        <div className="results-grid">
-          <article className="results-card results-card--score">
-            <p className="results-card__label">Cognitive Performance Score</p>
-            <div className="results-card__score">
-              {results.model1.available && results.model1.cognitive_performance_score !== null
-                ? results.model1.cognitive_performance_score.toFixed(2)
-                : "Unavailable"}
-              {showModel1Scale && results.model1.cognitive_performance_score !== null ? (
-                <span> / {results.model1.score_scale_max}</span>
-              ) : null}
-            </div>
-          </article>
 
-          <article className="results-card">
-            <p className="results-card__label">Cognitive Tasks Completed</p>
-            <div className="results-task-list" role="list" aria-label="Completed cognitive tasks">
-              {cognitiveTasks.map((item) => (
-                <div className="results-task-list__item" key={item.key} role="listitem">
-                  <span aria-hidden="true">{item.completed ? "OK" : "NO"}</span>
-                  <span>{item.label}</span>
-                  <strong>{item.completed ? "Completed" : "Pending"}</strong>
+        <div className="recommended-steps-card">
+          <ol className="recommended-steps-list">
+            {recommendedSteps.map((step: string, idx: number) => (
+              <li key={idx} className="recommended-step-item">
+                <span className="recommended-step-number" aria-hidden="true">{idx + 1}</span>
+                <div className="recommended-step-content">
+                  <p className="recommended-step-text">{step}</p>
                 </div>
-              ))}
-            </div>
-          </article>
-
-          <details className="results-card results-card--details">
-            <summary>Assessment Details</summary>
-            <div className="results-details">
-              <p>
-                <strong>Model:</strong> {results.model1.model_name ?? "NeuroDetect Model 1"}
-              </p>
-              <p>
-                <strong>Version:</strong> {results.model1.model_version ?? "1.0.0"}
-              </p>
-              <p>
-                <strong>Features:</strong> {results.model1.feature_count ?? "Unavailable"}
-              </p>
-              <p>
-                <strong>Type:</strong> {results.model1.model_type ?? "Cognitive performance regression"}
-              </p>
-            </div>
-          </details>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
-      <ModelEvaluation evaluation={results.model1.evaluation} />
+      {/* SECTION D: DETAILED MODEL RESULTS (Collapsible) */}
+      <section className="hero-card hero-card--section">
+        <details className="results-details-collapsible">
+          <summary className="results-details-summary">
+            <div className="results-details-summary__copy">
+              <h3 style={{ margin: 0, fontSize: "1.2rem" }}>Detailed Model Results</h3>
+              <p className="results-details-summary__hint">
+                Click to view detailed numerical scores, class probabilities, model architectures, and evaluation metrics.
+              </p>
+            </div>
+          </summary>
+
+          <div className="results-details-content">
+            {/* D1. Model 1 Details: Continuous Score, Evaluation, Tasks */}
+            <article className="results-card results-card--score" style={{ marginBottom: "16px" }}>
+              <p className="results-card__label">Model 1 · Cognitive Performance (47 Features)</p>
+              <div className="results-grid results-grid--two" style={{ marginTop: "12px" }}>
+                <div>
+                  <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>Continuous Cognitive Score</p>
+                  <div className="results-card__score" style={{ fontSize: "2rem" }}>
+                    {results.model1.available && results.model1.cognitive_performance_score !== null
+                      ? results.model1.cognitive_performance_score.toFixed(2)
+                      : "Unavailable"}
+                    {showModel1Scale && results.model1.cognitive_performance_score !== null ? (
+                      <span style={{ fontSize: "1rem" }}> / {results.model1.score_scale_max}</span>
+                    ) : null}
+                  </div>
+                  <p style={{ margin: "6px 0 0 0", fontSize: "0.92rem" }}>
+                    <strong>Category:</strong>{" "}
+                    <span style={{ fontWeight: 700, color: ("model1_category" in results.fusion && results.fusion.model1_category === "NORMAL") ? "var(--success)" : ("model1_category" in results.fusion && results.fusion.model1_category === "BORDERLINE") ? "var(--warning)" : "var(--error)" }}>
+                      {("model1_category" in results.fusion && results.fusion.model1_category) || "—"}
+                    </span>
+                    {" · "}
+                    <strong>Weight:</strong> 50%
+                  </p>
+                </div>
+
+                <div>
+                  <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>Model Architecture</p>
+                  <p style={{ margin: "0 0 4px 0", fontSize: "0.9rem" }}>
+                    <strong>Model:</strong> {results.model1.model_name ?? "NeuroDetect Model 1 (XGBoost Regressor)"}
+                  </p>
+                  <p style={{ margin: "0 0 4px 0", fontSize: "0.9rem" }}>
+                    <strong>Version:</strong> {results.model1.model_version ?? "1.0.0"}
+                  </p>
+                  <p style={{ margin: "0 0 4px 0", fontSize: "0.9rem" }}>
+                    <strong>Features Extracted:</strong> {results.model1.feature_count ?? 47} engineered features
+                  </p>
+                  <p style={{ margin: "0", fontSize: "0.9rem" }}>
+                    <strong>Type:</strong> {results.model1.model_type ?? "Continuous cognitive regression"}
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ marginTop: "16px" }}>
+                <p style={{ margin: "0 0 8px 0", fontWeight: 700, fontSize: "0.85rem", color: "var(--text-muted)", textTransform: "uppercase" }}>
+                  Cognitive Tasks Completed ({cognitiveTasks.length}/5)
+                </p>
+                <div className="results-task-list" role="list" aria-label="Completed cognitive tasks">
+                  {cognitiveTasks.map((item) => (
+                    <div className="results-task-list__item" key={item.key} role="listitem">
+                      <span aria-hidden="true">{item.completed ? "OK" : "NO"}</span>
+                      <span>{item.label}</span>
+                      <strong>{item.completed ? "Completed" : "Pending"}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {results.model1.evaluation && (
+                <div style={{ marginTop: "16px" }}>
+                  <ModelEvaluation evaluation={results.model1.evaluation} />
+                </div>
+              )}
+            </article>
+
+            {/* D2. Model 3 Details: Probabilities, Branch Probabilities, Engine */}
+            <article className="results-card" style={{ marginBottom: "16px" }}>
+              <p className="results-card__label">Model 3 · Speech Analysis (PROCESS-2 CTD Multimodal Model)</p>
+              <div className="results-grid results-grid--two" style={{ marginTop: "12px" }}>
+                <div>
+                  <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>Predicted Class</p>
+                  <div className="results-card__score results-card__score--class" style={{ fontSize: "1.8rem" }}>
+                    {model3Data?.predicted_class ?? "—"}
+                  </div>
+                  <p style={{ margin: "6px 0 0 0", fontSize: "0.92rem" }}>
+                    <strong>Status:</strong> {formatSeverityLabel(model3Data?.status || "pending")}
+                    {" · "}
+                    <strong>Weight:</strong> 50%
+                  </p>
+                  {model3Data?.transcription_engine && (
+                    <p style={{ margin: "4px 0 0 0", fontSize: "0.88rem", color: "var(--text-muted)" }}>
+                      <strong>ASR Engine:</strong> {model3Data.transcription_engine}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>Full Class Probabilities</p>
+                  <div className="speech-probabilities-grid">
+                    <div className="prob-item">
+                      <span className="prob-label">Healthy Control (HC):</span>
+                      <strong>
+                        {model3Data?.hc_probability !== null && model3Data?.hc_probability !== undefined
+                          ? `${(model3Data.hc_probability * 100).toFixed(1)}%`
+                          : model3Data?.probabilities?.HC !== undefined
+                          ? `${(model3Data.probabilities.HC * 100).toFixed(1)}%`
+                          : "—"}
+                      </strong>
+                    </div>
+                    <div className="prob-item">
+                      <span className="prob-label">Mild Cognitive Impairment (MCI):</span>
+                      <strong>
+                        {model3Data?.mci_probability !== null && model3Data?.mci_probability !== undefined
+                          ? `${(model3Data.mci_probability * 100).toFixed(1)}%`
+                          : model3Data?.probabilities?.MCI !== undefined
+                          ? `${(model3Data.probabilities.MCI * 100).toFixed(1)}%`
+                          : "—"}
+                      </strong>
+                    </div>
+                    <div className="prob-item">
+                      <span className="prob-label">Dementia:</span>
+                      <strong>
+                        {model3Data?.dementia_probability !== null && model3Data?.dementia_probability !== undefined
+                          ? `${(model3Data.dementia_probability * 100).toFixed(1)}%`
+                          : model3Data?.probabilities?.Dementia !== undefined
+                          ? `${(model3Data.probabilities.Dementia * 100).toFixed(1)}%`
+                          : "—"}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {model3Data && model3Data.branch_probabilities && (
+                <div style={{ marginTop: "16px", padding: "12px", background: "var(--surface-accent)", borderRadius: "var(--radius-sm)" }}>
+                  <p style={{ margin: "0 0 8px 0", fontWeight: 700, fontSize: "0.82rem", textTransform: "uppercase", color: "var(--text-muted)" }}>
+                    Multimodal Branch Embeddings
+                  </p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "10px", fontSize: "0.85rem" }}>
+                    {Object.entries(model3Data.branch_probabilities).map(([branch, probs]: [string, Record<string, number>]) => (
+                      <div key={branch} style={{ background: "var(--surface)", padding: "8px 12px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)" }}>
+                        <strong style={{ textTransform: "capitalize" }}>{branch.replace(/_/g, " ")}:</strong>
+                        <div style={{ marginTop: "4px", fontSize: "0.82rem" }}>
+                          HC: {probs.HC !== undefined ? `${(probs.HC * 100).toFixed(1)}%` : "—"} | MCI: {probs.MCI !== undefined ? `${(probs.MCI * 100).toFixed(1)}%` : "—"} | Dem: {probs.Dementia !== undefined ? `${(probs.Dementia * 100).toFixed(1)}%` : "—"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginTop: "12px", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                <p style={{ margin: "2px 0" }}><strong>Model Version:</strong> {model3Data?.model_version ?? "model3-process2-ctd-20261116-full"}</p>
+                <p style={{ margin: "2px 0" }}><strong>Components:</strong> Wav2Vec2 + 42 OpenSMILE Acoustic + DistilBERT + 12 spaCy Linguistic (Fusion Head)</p>
+              </div>
+            </article>
+
+            {/* D3. Model 2 Details: PHQ-9 and GAD-7 Mental Health Screening */}
+            <article className="results-card" style={{ marginBottom: "16px" }}>
+              <p className="results-card__label">Model 2 · Mental Health Screening (Non-Cognitive Context)</p>
+              <div className="results-grid results-grid--two" style={{ marginTop: "12px" }}>
+                <div>
+                  <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>PHQ-9 (Depressive Symptoms)</p>
+                  <div className="results-card__score results-card__score--small">
+                    {results.mental_health.phq9.available && results.mental_health.phq9.score !== null
+                      ? `${results.mental_health.phq9.score} / ${results.mental_health.phq9.score_max}`
+                      : "Unavailable"}
+                  </div>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "0.92rem" }}>
+                    <strong>Severity:</strong> {formatSeverityLabel(results.mental_health.phq9.severity)}
+                  </p>
+                </div>
+
+                <div>
+                  <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>GAD-7 (Anxiety Symptoms)</p>
+                  <div className="results-card__score results-card__score--small">
+                    {results.mental_health.gad7.available && results.mental_health.gad7.score !== null
+                      ? `${results.mental_health.gad7.score} / ${results.mental_health.gad7.score_max}`
+                      : "Unavailable"}
+                  </div>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "0.92rem" }}>
+                    <strong>Severity:</strong> {formatSeverityLabel(results.mental_health.gad7.severity)}
+                  </p>
+                </div>
+              </div>
+
+              {fusionData?.contextual_flags && fusionData.contextual_flags.length > 0 && (
+                <div className="fusion-flags-list" style={{ marginTop: "14px" }}>
+                  {fusionData.contextual_flags.map((flag: string, idx: number) => (
+                    <div key={idx} className="fusion-flag-card">
+                      ℹ️ <strong>Clinical Context:</strong> {flag}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+
+            {/* D4. Multimodal Fusion Synthesis Internals */}
+            {isFusionAvailable && fusionData && (
+              <article className="results-card">
+                <p className="results-card__label">Multimodal Fusion Synthesis Internals</p>
+                <div style={{ marginTop: "8px", fontSize: "0.92rem", lineHeight: 1.6 }}>
+                  <p style={{ margin: "0 0 6px 0" }}>
+                    <strong>Decision Matrix Weighting:</strong> 50% Cognitive Games (Model 1) + 50% Speech Analysis (Model 3)
+                  </p>
+                  <p style={{ margin: "0 0 6px 0" }}>
+                    <strong>Internal Rule Category:</strong>{" "}
+                    <span className={`fusion-badge ${getFusionBadgeClass(fusionData.interpretation)}`} style={{ padding: "2px 8px", fontSize: "0.82rem" }}>
+                      {fusionData.interpretation}
+                    </span>
+                  </p>
+                  <p style={{ margin: "0 0 6px 0" }}>
+                    <strong>Technical Synthesis Rationale:</strong> {fusionData.explanation}
+                  </p>
+                  {fusionData.rules_triggered && fusionData.rules_triggered.length > 0 && (
+                    <p style={{ margin: "6px 0 0 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                      <strong>Rules Applied:</strong> {fusionData.rules_triggered.join(" | ")}
+                    </p>
+                  )}
+                </div>
+              </article>
+            )}
+          </div>
+        </details>
+      </section>
 
       {model1Status === "error" && model1Error ? (
         <ErrorState
@@ -854,140 +1219,10 @@ function ResultsScreen({
         />
       ) : null}
 
-      {/* 3. Model 2 – PHQ-9 and GAD-7 */}
-      <section className="hero-card hero-card--section">
-        <div className="section-copy">
-          <p className="hero-card__eyebrow">Mental Health Screening</p>
-          <h3>Your mood and wellbeing</h3>
-          <p className="hero-card__body">
-            These questionnaires provide screening scores based on the responses provided during the assessment. They are
-            not diagnostic results.
-          </p>
-        </div>
-        <div className="results-grid results-grid--two">
-          <article className="results-card">
-            <p className="results-card__label">PHQ-9</p>
-            <div className="results-card__score results-card__score--small">
-              {results.mental_health.phq9.available && results.mental_health.phq9.score !== null
-                ? `${results.mental_health.phq9.score} / ${results.mental_health.phq9.score_max}`
-                : "Unavailable"}
-            </div>
-            <p>
-              <strong>Severity:</strong> {formatSeverityLabel(results.mental_health.phq9.severity)}
-            </p>
-          </article>
-
-          <article className="results-card">
-            <p className="results-card__label">GAD-7</p>
-            <div className="results-card__score results-card__score--small">
-              {results.mental_health.gad7.available && results.mental_health.gad7.score !== null
-                ? `${results.mental_health.gad7.score} / ${results.mental_health.gad7.score_max}`
-                : "Unavailable"}
-            </div>
-            <p>
-              <strong>Severity:</strong> {formatSeverityLabel(results.mental_health.gad7.severity)}
-            </p>
-          </article>
-        </div>
-        <p className="results-disclaimer">
-          These screening scores are intended to provide an indication of symptom severity based on the questionnaire
-          responses. They do not constitute a medical diagnosis.
-        </p>
-      </section>
-
-      {/* 4. Model 3 – Speech Classification */}
-      <section className="hero-card hero-card--section">
-        <div className="section-copy">
-          <p className="hero-card__eyebrow">Speech Analysis · Model 3</p>
-          <h3>Speech classification (PROCESS-2 CTD)</h3>
-          <p className="hero-card__body">
-            Multimodal acoustic and linguistic speech indicators based on Cookie Theft picture description.
-          </p>
-        </div>
-        {results.model3 && results.model3.available ? (
-          <div className="results-grid">
-            <article className="results-card results-card--score">
-              <p className="results-card__label">Predicted Classification</p>
-              <div className="results-card__score results-card__score--class">
-                {results.model3.predicted_class ?? "Analysis Complete"}
-              </div>
-              <p className="results-card__meta">
-                <strong>Status:</strong> {formatSeverityLabel(results.model3.status)}
-              </p>
-            </article>
-
-            <article className="results-card">
-              <p className="results-card__label">Class Probabilities</p>
-              <div className="speech-probabilities-grid">
-                <div className="prob-item">
-                  <span className="prob-label">Healthy Control (HC):</span>
-                  <strong>
-                    {results.model3.hc_probability !== null && results.model3.hc_probability !== undefined
-                      ? `${(results.model3.hc_probability * 100).toFixed(1)}%`
-                      : results.model3.probabilities?.HC !== undefined
-                      ? `${(results.model3.probabilities.HC * 100).toFixed(1)}%`
-                      : "—"}
-                  </strong>
-                </div>
-                <div className="prob-item">
-                  <span className="prob-label">Mild Cognitive Impairment (MCI):</span>
-                  <strong>
-                    {results.model3.mci_probability !== null && results.model3.mci_probability !== undefined
-                      ? `${(results.model3.mci_probability * 100).toFixed(1)}%`
-                      : results.model3.probabilities?.MCI !== undefined
-                      ? `${(results.model3.probabilities.MCI * 100).toFixed(1)}%`
-                      : "—"}
-                  </strong>
-                </div>
-                <div className="prob-item">
-                  <span className="prob-label">Dementia:</span>
-                  <strong>
-                    {results.model3.dementia_probability !== null && results.model3.dementia_probability !== undefined
-                      ? `${(results.model3.dementia_probability * 100).toFixed(1)}%`
-                      : results.model3.probabilities?.Dementia !== undefined
-                      ? `${(results.model3.probabilities.Dementia * 100).toFixed(1)}%`
-                      : "—"}
-                  </strong>
-                </div>
-              </div>
-            </article>
-
-            <details className="results-card results-card--details">
-              <summary>Model & Analysis Details</summary>
-              <div className="results-details">
-                <p>
-                  <strong>Model Version:</strong> {results.model3.model_version ?? "model3-process2-ctd-20261116-full"}
-                </p>
-                <p>
-                  <strong>Components:</strong> Wav2Vec2 + 42 Acoustic + DistilBERT + 12 Linguistic (Fusion)
-                </p>
-                {results.model3.transcription_engine && (
-                  <p>
-                    <strong>Transcription Engine:</strong> {results.model3.transcription_engine}
-                  </p>
-                )}
-                {results.model3.status === "awaiting_asr_verification" && (
-                  <p className="asr-verification-badge">
-                    ⚠️ <em>Awaiting ASR compatibility verification (Model 3 was trained on human clinical transcripts).</em>
-                  </p>
-                )}
-              </div>
-            </details>
-          </div>
-        ) : (
-          <div className="results-card results-card--pending">
-            <p className="results-card__label">{results.model3?.title || "Speech Assessment"}</p>
-            <p className="hero-card__body">
-              {results.model3?.description || "Speech analysis has not been completed for this session."}
-            </p>
-          </div>
-        )}
-
-        <p className="results-disclaimer">
-          {("disclaimer" in results.model3 && results.model3.disclaimer) ||
-            "NeuroDetect Model 3 is an experimental speech-based research screening model. Its predictions are not a medical diagnosis and must not be used as a substitute for professional clinical assessment."}
-        </p>
-      </section>
+      <p className="results-disclaimer">
+        {("disclaimer" in results.fusion && results.fusion.disclaimer) ||
+          "NeuroDetect is an experimental multimodal cognitive screening research prototype, not a medical device or diagnostic instrument. Results must be reviewed in clinical context by qualified healthcare professionals."}
+      </p>
 
     </div>
   );

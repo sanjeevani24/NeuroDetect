@@ -5,6 +5,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field
 
 from app.assessments.schemas import AssessmentStage
+from app.fusion.schemas import FusionResultSummary
 
 
 class ResultChecklistItem(BaseModel):
@@ -91,6 +92,6 @@ class AssessmentResultsResponse(BaseModel):
     model1: Model1ResultSummary
     mental_health: MentalHealthResultsSummary
     model3: Model3ResultSummary | PendingModuleSummary
-    fusion: PendingModuleSummary
+    fusion: FusionResultSummary | PendingModuleSummary
     completed_components: list[ResultChecklistItem]
     missing_components: list[str]

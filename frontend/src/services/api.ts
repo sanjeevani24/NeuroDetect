@@ -127,6 +127,59 @@ export interface PendingModuleSummary {
   description: string;
 }
 
+export interface MentalHealthContextSummary {
+  phq9_score?: number | null;
+  phq9_severity?: string | null;
+  gad7_score?: number | null;
+  gad7_severity?: string | null;
+  depression_elevated?: boolean;
+  anxiety_elevated?: boolean;
+  contextual_flags?: string[];
+}
+
+export interface KeyFinding {
+  title: string;
+  status_label: string;
+  summary: string;
+  badge_variant: string;
+}
+
+export interface FusionKeyFindings {
+  cognitive_games: KeyFinding;
+  speech_analysis: KeyFinding;
+  mental_health: KeyFinding;
+}
+
+export interface FusionResultSummary {
+  available: boolean;
+  status: "completed" | "provisional" | "insufficient_data" | "pending" | string;
+  title: string;
+  interpretation:
+    | "NO_ELEVATED_INDICATORS"
+    | "FURTHER_ASSESSMENT"
+    | "ELEVATED_COGNITIVE_INDICATORS"
+    | "INSUFFICIENT_DATA";
+  interpretation_label: string;
+  conclusion: string;
+  verification_status: "COMPLETE" | "PROVISIONAL" | "UNVERIFIED";
+  provisional_warning?: string | null;
+  recommended_next_step?: string;
+  recommended_steps?: string[];
+  key_findings?: FusionKeyFindings | null;
+  model1_score?: number | null;
+  model1_category: "NORMAL" | "BORDERLINE" | "LOW" | "UNKNOWN";
+  model1_weight_percent: number;
+  model3_predicted_class?: string | null;
+  model3_category: "HC_DOMINANT" | "MCI_INDICATIVE" | "DEMENTIA_INDICATIVE" | "UNCERTAIN" | "UNKNOWN";
+  model3_weight_percent: number;
+  model3_probabilities?: Record<string, number> | null;
+  mental_health_context?: MentalHealthContextSummary;
+  contextual_flags?: string[];
+  rules_triggered?: string[];
+  explanation: string;
+  disclaimer: string;
+}
+
 export interface Model3ResultSummary {
   available: boolean;
   status: "pending" | "processing" | "completed" | "failed" | "awaiting_asr_verification" | string;
@@ -202,7 +255,7 @@ export interface AssessmentResults {
     gad7: ScreeningScoreSummary;
   };
   model3: Model3ResultSummary | PendingModuleSummary;
-  fusion: PendingModuleSummary;
+  fusion: FusionResultSummary | PendingModuleSummary;
   completed_components: ResultChecklistItem[];
   missing_components: string[];
 }
@@ -525,6 +578,10 @@ export function predictModel1(assessmentId: string): Promise<Model1PredictionRes
 
 export function getAssessmentResults(assessmentId: string): Promise<AssessmentResults> {
   return requestJson<AssessmentResults>(`${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/results`);
+}
+
+export function getAssessmentFusion(assessmentId: string): Promise<FusionResultSummary> {
+  return requestJson<FusionResultSummary>(`${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/fusion`);
 }
 
 export async function uploadSpeechRecording(
