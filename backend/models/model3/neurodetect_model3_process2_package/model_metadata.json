@@ -1,0 +1,713 @@
+{
+  "model_version": "model3-process2-ctd-20261116-full",
+  "mode": "full",
+  "dataset": "CognoSpeak/PROCESS-2 (CTD only; not redistributed)",
+  "dataset_revision": "2a3ab7cd5d070b1e0ab023e59632fcfa816d2952",
+  "split_strategy": "OFFICIAL partition from meta-info.csv column 'Split'",
+  "split_is_official": true,
+  "validation_scheme": "nested grouped CV: outer folds on the training partition; branch hyper-parameters, fusion variant and fusion C selected inside each outer fold; test partition evaluated once after selection was frozen",
+  "n_participants_in_metadata": 400,
+  "total_eligible_participants": 400,
+  "n_analysed_participants": 400,
+  "exclusions_by_reason": {
+    "no CTD recording (wav) in the repository": 0,
+    "no CTD transcript file": 0,
+    "empty CTD transcript after cleaning": 0
+  },
+  "n_train_participants": 320,
+  "n_test_participants": 80,
+  "train_class_distribution": {
+    "HC": 160,
+    "MCI": 120,
+    "Dementia": 40
+  },
+  "test_class_distribution": {
+    "HC": 40,
+    "MCI": 30,
+    "Dementia": 10
+  },
+  "selected_model": "fusion",
+  "fusion_variant": "audio+acoustic+transcript",
+  "fusion_inputs": [
+    "audio_embedding",
+    "acoustic",
+    "transcript"
+  ],
+  "selection_record": {
+    "selected": "fusion",
+    "cv_macro_f1": {
+      "audio_embedding": 0.49067890314020346,
+      "acoustic": 0.39285147351300226,
+      "transcript": 0.48262527233115465,
+      "fusion": 0.5063968526232677
+    }
+  },
+  "encoder_revisions": {
+    "facebook/wav2vec2-base": "0b5b8e868dd84f03fd87d01f9c4ff0f080fecfe8",
+    "distilbert-base-uncased": "12040accade4e8a0f71eabdb258fecc2e7e948be"
+  },
+  "dependency_versions": {
+    "numpy": "2.4.6",
+    "scipy": "1.16.3",
+    "scikit-learn": "1.6.1",
+    "joblib": "1.6.0",
+    "librosa": "0.11.0",
+    "soundfile": "0.14.0",
+    "torch": "2.14.1+cu130",
+    "transformers": "5.22.1",
+    "huggingface_hub": "1.33.0"
+  },
+  "python": "3.13.16",
+  "device_used": "cuda",
+  "evaluation_metrics": {
+    "audio_embedding": {
+      "train": {
+        "accuracy": 0.840625,
+        "balanced_accuracy": 0.8659722222222223,
+        "macro_precision": 0.813115987135595,
+        "macro_recall": 0.8659722222222223,
+        "macro_f1": 0.8300260664391099,
+        "weighted_f1": 0.8401263744334397,
+        "roc_auc_ovr_macro": 0.9560677083333333,
+        "per_class": {
+          "HC": {
+            "precision": 0.8703703703703703,
+            "recall": 0.88125,
+            "f1": 0.8757763975155279
+          },
+          "MCI": {
+            "precision": 0.8725490196078431,
+            "recall": 0.7416666666666667,
+            "f1": 0.8018018018018018
+          },
+          "Dementia": {
+            "precision": 0.6964285714285714,
+            "recall": 0.975,
+            "f1": 0.8125
+          }
+        },
+        "confusion_matrix": [
+          [
+            141,
+            13,
+            6
+          ],
+          [
+            20,
+            89,
+            11
+          ],
+          [
+            1,
+            0,
+            39
+          ]
+        ]
+      },
+      "cv": {
+        "accuracy": 0.56875,
+        "balanced_accuracy": 0.48819444444444454,
+        "macro_precision": 0.497008547008547,
+        "macro_recall": 0.48819444444444454,
+        "macro_f1": 0.49067890314020346,
+        "weighted_f1": 0.5627335802742148,
+        "roc_auc_ovr_macro": 0.6778601190476191,
+        "per_class": {
+          "HC": {
+            "precision": 0.6277777777777778,
+            "recall": 0.70625,
+            "f1": 0.6647058823529411
+          },
+          "MCI": {
+            "precision": 0.5576923076923077,
+            "recall": 0.48333333333333334,
+            "f1": 0.5178571428571429
+          },
+          "Dementia": {
+            "precision": 0.3055555555555556,
+            "recall": 0.275,
+            "f1": 0.2894736842105263
+          }
+        },
+        "confusion_matrix": [
+          [
+            113,
+            33,
+            14
+          ],
+          [
+            51,
+            58,
+            11
+          ],
+          [
+            16,
+            13,
+            11
+          ]
+        ]
+      },
+      "cv_fold_macro_f1": [
+        0.5068504594820383,
+        0.5159519725557461,
+        0.4218400854949966,
+        0.5222222222222221,
+        0.35341880341880344
+      ],
+      "inner_tuning_macro_f1": 0.4804150324251464,
+      "test": {
+        "accuracy": 0.6125,
+        "balanced_accuracy": 0.48888888888888893,
+        "macro_precision": 0.5125697125697125,
+        "macro_recall": 0.48888888888888893,
+        "macro_f1": 0.4989759665621735,
+        "weighted_f1": 0.632257053291536,
+        "roc_auc_ovr_macro": 0.6876587301587301,
+        "per_class": {
+          "HC": {
+            "precision": 0.7567567567567568,
+            "recall": 0.7,
+            "f1": 0.7272727272727273
+          },
+          "MCI": {
+            "precision": 0.7142857142857143,
+            "recall": 0.6666666666666666,
+            "f1": 0.6896551724137931
+          },
+          "Dementia": {
+            "precision": 0.06666666666666667,
+            "recall": 0.1,
+            "f1": 0.08
+          }
+        },
+        "confusion_matrix": [
+          [
+            28,
+            5,
+            7
+          ],
+          [
+            3,
+            20,
+            7
+          ],
+          [
+            6,
+            3,
+            1
+          ]
+        ]
+      }
+    },
+    "acoustic": {
+      "train": {
+        "accuracy": 0.98125,
+        "balanced_accuracy": 0.9500000000000001,
+        "macro_precision": 0.9841269841269842,
+        "macro_recall": 0.9500000000000001,
+        "macro_f1": 0.96484289167216,
+        "weighted_f1": 0.9807185234014503,
+        "roc_auc_ovr_macro": 1.0,
+        "per_class": {
+          "HC": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0
+          },
+          "MCI": {
+            "precision": 0.9523809523809523,
+            "recall": 1.0,
+            "f1": 0.975609756097561
+          },
+          "Dementia": {
+            "precision": 1.0,
+            "recall": 0.85,
+            "f1": 0.918918918918919
+          }
+        },
+        "confusion_matrix": [
+          [
+            160,
+            0,
+            0
+          ],
+          [
+            0,
+            120,
+            0
+          ],
+          [
+            0,
+            6,
+            34
+          ]
+        ]
+      },
+      "cv": {
+        "accuracy": 0.490625,
+        "balanced_accuracy": 0.3972222222222222,
+        "macro_precision": 0.4032725845612632,
+        "macro_recall": 0.3972222222222222,
+        "macro_f1": 0.39285147351300226,
+        "weighted_f1": 0.47406568911738817,
+        "roc_auc_ovr_macro": 0.5877052331349206,
+        "per_class": {
+          "HC": {
+            "precision": 0.5572139303482587,
+            "recall": 0.7,
+            "f1": 0.6204986149584487
+          },
+          "MCI": {
+            "precision": 0.4634146341463415,
+            "recall": 0.31666666666666665,
+            "f1": 0.37623762376237624
+          },
+          "Dementia": {
+            "precision": 0.1891891891891892,
+            "recall": 0.175,
+            "f1": 0.18181818181818182
+          }
+        },
+        "confusion_matrix": [
+          [
+            112,
+            32,
+            16
+          ],
+          [
+            68,
+            38,
+            14
+          ],
+          [
+            21,
+            12,
+            7
+          ]
+        ]
+      },
+      "cv_fold_macro_f1": [
+        0.33191919191919195,
+        0.3633618414106219,
+        0.33604336043360433,
+        0.4485810485810486,
+        0.4068965517241379
+      ],
+      "inner_tuning_macro_f1": 0.43398770893647665,
+      "test": {
+        "accuracy": 0.6875,
+        "balanced_accuracy": 0.5083333333333333,
+        "macro_precision": 0.45916429249762586,
+        "macro_recall": 0.5083333333333333,
+        "macro_f1": 0.4766970618034448,
+        "weighted_f1": 0.6346884498480243,
+        "roc_auc_ovr_macro": 0.7983750000000001,
+        "per_class": {
+          "HC": {
+            "precision": 0.6851851851851852,
+            "recall": 0.925,
+            "f1": 0.7872340425531915
+          },
+          "MCI": {
+            "precision": 0.6923076923076923,
+            "recall": 0.6,
+            "f1": 0.6428571428571429
+          },
+          "Dementia": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0
+          }
+        },
+        "confusion_matrix": [
+          [
+            37,
+            3,
+            0
+          ],
+          [
+            12,
+            18,
+            0
+          ],
+          [
+            5,
+            5,
+            0
+          ]
+        ]
+      }
+    },
+    "transcript": {
+      "train": {
+        "accuracy": 0.74375,
+        "balanced_accuracy": 0.7541666666666668,
+        "macro_precision": 0.7028080341069307,
+        "macro_recall": 0.7541666666666668,
+        "macro_f1": 0.7195812948003186,
+        "weighted_f1": 0.7475859976485759,
+        "roc_auc_ovr_macro": 0.8917772817460318,
+        "per_class": {
+          "HC": {
+            "precision": 0.8356164383561644,
+            "recall": 0.7625,
+            "f1": 0.7973856209150327
+          },
+          "MCI": {
+            "precision": 0.7304347826086957,
+            "recall": 0.7,
+            "f1": 0.7148936170212766
+          },
+          "Dementia": {
+            "precision": 0.5423728813559322,
+            "recall": 0.8,
+            "f1": 0.6464646464646465
+          }
+        },
+        "confusion_matrix": [
+          [
+            122,
+            28,
+            10
+          ],
+          [
+            19,
+            84,
+            17
+          ],
+          [
+            5,
+            3,
+            32
+          ]
+        ]
+      },
+      "cv": {
+        "accuracy": 0.575,
+        "balanced_accuracy": 0.4833333333333334,
+        "macro_precision": 0.48252688172043007,
+        "macro_recall": 0.4833333333333334,
+        "macro_f1": 0.48262527233115465,
+        "weighted_f1": 0.5789011437908497,
+        "roc_auc_ovr_macro": 0.7245906498015874,
+        "per_class": {
+          "HC": {
+            "precision": 0.7225806451612903,
+            "recall": 0.7,
+            "f1": 0.7111111111111111
+          },
+          "MCI": {
+            "precision": 0.525,
+            "recall": 0.525,
+            "f1": 0.525
+          },
+          "Dementia": {
+            "precision": 0.2,
+            "recall": 0.225,
+            "f1": 0.21176470588235294
+          }
+        },
+        "confusion_matrix": [
+          [
+            112,
+            38,
+            10
+          ],
+          [
+            31,
+            63,
+            26
+          ],
+          [
+            12,
+            19,
+            9
+          ]
+        ]
+      },
+      "cv_fold_macro_f1": [
+        0.3705747126436782,
+        0.53934797962901,
+        0.5236322816967979,
+        0.3714939207896954,
+        0.6006349206349206
+      ],
+      "inner_tuning_macro_f1": 0.5011193959290046,
+      "test": {
+        "accuracy": 0.6375,
+        "balanced_accuracy": 0.561111111111111,
+        "macro_precision": 0.5492424242424242,
+        "macro_recall": 0.561111111111111,
+        "macro_f1": 0.5515472182138849,
+        "weighted_f1": 0.6307720057720058,
+        "roc_auc_ovr_macro": 0.7649940476190477,
+        "per_class": {
+          "HC": {
+            "precision": 0.7727272727272727,
+            "recall": 0.85,
+            "f1": 0.8095238095238095
+          },
+          "MCI": {
+            "precision": 0.5416666666666666,
+            "recall": 0.43333333333333335,
+            "f1": 0.48148148148148145
+          },
+          "Dementia": {
+            "precision": 0.3333333333333333,
+            "recall": 0.4,
+            "f1": 0.36363636363636365
+          }
+        },
+        "confusion_matrix": [
+          [
+            34,
+            6,
+            0
+          ],
+          [
+            9,
+            13,
+            8
+          ],
+          [
+            1,
+            5,
+            4
+          ]
+        ]
+      }
+    },
+    "fusion": {
+      "train": {
+        "accuracy": 0.60625,
+        "balanced_accuracy": 0.5750000000000001,
+        "macro_precision": 0.5501815744616406,
+        "macro_recall": 0.5750000000000001,
+        "macro_f1": 0.5491988650867156,
+        "weighted_f1": 0.6153176206914525,
+        "roc_auc_ovr_macro": 0.7793270089285714,
+        "per_class": {
+          "HC": {
+            "precision": 0.7483870967741936,
+            "recall": 0.725,
+            "f1": 0.7365079365079366
+          },
+          "MCI": {
+            "precision": 0.6063829787234043,
+            "recall": 0.475,
+            "f1": 0.5327102803738317
+          },
+          "Dementia": {
+            "precision": 0.29577464788732394,
+            "recall": 0.525,
+            "f1": 0.3783783783783784
+          }
+        },
+        "confusion_matrix": [
+          [
+            116,
+            26,
+            18
+          ],
+          [
+            31,
+            57,
+            32
+          ],
+          [
+            8,
+            11,
+            21
+          ]
+        ]
+      },
+      "cv": {
+        "accuracy": 0.56875,
+        "balanced_accuracy": 0.5319444444444444,
+        "macro_precision": 0.5134596553074814,
+        "macro_recall": 0.5319444444444444,
+        "macro_f1": 0.5063968526232677,
+        "weighted_f1": 0.583062260066977,
+        "roc_auc_ovr_macro": 0.7541491815476191,
+        "per_class": {
+          "HC": {
+            "precision": 0.7702702702702703,
+            "recall": 0.7125,
+            "f1": 0.7402597402597403
+          },
+          "MCI": {
+            "precision": 0.532608695652174,
+            "recall": 0.4083333333333333,
+            "f1": 0.46226415094339623
+          },
+          "Dementia": {
+            "precision": 0.2375,
+            "recall": 0.475,
+            "f1": 0.31666666666666665
+          }
+        },
+        "confusion_matrix": [
+          [
+            114,
+            27,
+            19
+          ],
+          [
+            29,
+            49,
+            42
+          ],
+          [
+            5,
+            16,
+            19
+          ]
+        ]
+      },
+      "cv_fold_macro_f1": [
+        0.4537801116945903,
+        0.516551724137931,
+        0.42834138486312395,
+        0.4897669505512643,
+        0.6245000613421666
+      ],
+      "variants_chosen_per_outer_fold": [
+        "audio+transcript",
+        "audio+acoustic+transcript",
+        "audio+acoustic+transcript",
+        "audio+transcript",
+        "audio+transcript"
+      ],
+      "test": {
+        "accuracy": 0.7,
+        "balanced_accuracy": 0.6333333333333333,
+        "macro_precision": 0.6233707575170989,
+        "macro_recall": 0.6333333333333333,
+        "macro_f1": 0.6114223467164644,
+        "weighted_f1": 0.7096755368814193,
+        "roc_auc_ovr_macro": 0.8494742063492063,
+        "per_class": {
+          "HC": {
+            "precision": 0.8780487804878049,
+            "recall": 0.9,
+            "f1": 0.8888888888888888
+          },
+          "MCI": {
+            "precision": 0.7142857142857143,
+            "recall": 0.5,
+            "f1": 0.5882352941176471
+          },
+          "Dementia": {
+            "precision": 0.2777777777777778,
+            "recall": 0.5,
+            "f1": 0.35714285714285715
+          }
+        },
+        "confusion_matrix": [
+          [
+            36,
+            2,
+            2
+          ],
+          [
+            4,
+            15,
+            11
+          ],
+          [
+            1,
+            4,
+            5
+          ]
+        ]
+      }
+    }
+  },
+  "selected_model_cv_metrics": {
+    "accuracy": 0.56875,
+    "balanced_accuracy": 0.5319444444444444,
+    "macro_precision": 0.5134596553074814,
+    "macro_recall": 0.5319444444444444,
+    "macro_f1": 0.5063968526232677,
+    "weighted_f1": 0.583062260066977,
+    "roc_auc_ovr_macro": 0.7541491815476191,
+    "per_class": {
+      "HC": {
+        "precision": 0.7702702702702703,
+        "recall": 0.7125,
+        "f1": 0.7402597402597403
+      },
+      "MCI": {
+        "precision": 0.532608695652174,
+        "recall": 0.4083333333333333,
+        "f1": 0.46226415094339623
+      },
+      "Dementia": {
+        "precision": 0.2375,
+        "recall": 0.475,
+        "f1": 0.31666666666666665
+      }
+    },
+    "confusion_matrix": [
+      [
+        114,
+        27,
+        19
+      ],
+      [
+        29,
+        49,
+        42
+      ],
+      [
+        5,
+        16,
+        19
+      ]
+    ]
+  },
+  "selected_model_test_metrics": {
+    "accuracy": 0.7,
+    "balanced_accuracy": 0.6333333333333333,
+    "macro_precision": 0.6233707575170989,
+    "macro_recall": 0.6333333333333333,
+    "macro_f1": 0.6114223467164644,
+    "weighted_f1": 0.7096755368814193,
+    "roc_auc_ovr_macro": 0.8494742063492063,
+    "per_class": {
+      "HC": {
+        "precision": 0.8780487804878049,
+        "recall": 0.9,
+        "f1": 0.8888888888888888
+      },
+      "MCI": {
+        "precision": 0.7142857142857143,
+        "recall": 0.5,
+        "f1": 0.5882352941176471
+      },
+      "Dementia": {
+        "precision": 0.2777777777777778,
+        "recall": 0.5,
+        "f1": 0.35714285714285715
+      }
+    },
+    "confusion_matrix": [
+      [
+        36,
+        2,
+        2
+      ],
+      [
+        4,
+        15,
+        11
+      ],
+      [
+        1,
+        4,
+        5
+      ]
+    ]
+  },
+  "disclaimer": "NeuroDetect Model 3 is an experimental speech-based research screening model. Its predictions are not a medical diagnosis and must not be used as a substitute for professional clinical assessment."
+}

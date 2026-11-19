@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from typing import Literal
+=======
+from typing import Any, Literal
+>>>>>>> neurodetect-model_3
 
 from pydantic import BaseModel, Field
 
 from app.assessments.schemas import AssessmentStage
+<<<<<<< HEAD
+=======
+from app.fusion.schemas import FusionResultSummary
+>>>>>>> neurodetect-model_3
 
 
 class ResultChecklistItem(BaseModel):
@@ -58,6 +66,31 @@ class PendingModuleSummary(BaseModel):
     description: str
 
 
+<<<<<<< HEAD
+=======
+class Model3ResultSummary(BaseModel):
+    available: bool
+    status: str = "pending"
+    title: str = "Speech Assessment"
+    description: str | None = None
+    predicted_class: str | None = None
+    probability_hc: float | None = None
+    hc_probability: float | None = None
+    probability_mci: float | None = None
+    mci_probability: float | None = None
+    probability_dementia: float | None = None
+    dementia_probability: float | None = None
+    probabilities: dict[str, float] | None = None
+    branch_probabilities: dict[str, Any] | None = None
+    components_used: list[str] | None = None
+    model_name: str | None = None
+    model_version: str | None = None
+    disclaimer: str | None = None
+    error_message: str | None = None
+    transcription_engine: str | None = None
+
+
+>>>>>>> neurodetect-model_3
 class AssessmentResultsResponse(BaseModel):
     assessment_id: str
     assessment_short_id: str
@@ -68,7 +101,12 @@ class AssessmentResultsResponse(BaseModel):
     completion_message: str
     model1: Model1ResultSummary
     mental_health: MentalHealthResultsSummary
+<<<<<<< HEAD
     model3: PendingModuleSummary
     fusion: PendingModuleSummary
+=======
+    model3: Model3ResultSummary | PendingModuleSummary
+    fusion: FusionResultSummary | PendingModuleSummary
+>>>>>>> neurodetect-model_3
     completed_components: list[ResultChecklistItem]
     missing_components: list[str]

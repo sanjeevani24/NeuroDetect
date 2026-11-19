@@ -104,6 +104,15 @@ class AssessmentRepository:
             completed.append("BOSTON_NAMING")
         if self._table_has_assessment("trail_making_results", assessment_id):
             completed.append("TRAIL_MAKING")
+<<<<<<< HEAD
+=======
+        if (
+            self._table_has_assessment("speech_assessments", assessment_id)
+            or self._table_has_assessment("model3_results", assessment_id)
+            or self._table_has_assessment("speech_results", assessment_id)
+        ):
+            completed.append("SPEECH")
+>>>>>>> neurodetect-model_3
         return completed
 
     def _current_stage(self, completed_stages: list[str]) -> str:
@@ -119,6 +128,7 @@ class AssessmentRepository:
             return "BOSTON_NAMING"
         if "TRAIL_MAKING" not in completed_stages:
             return "TRAIL_MAKING"
+<<<<<<< HEAD
         return "RESULTS"
 
     def _table_has_assessment(self, table_name: str, assessment_id: str) -> bool:
@@ -130,6 +140,24 @@ class AssessmentRepository:
             .execute()
         )
         return row is not None
+=======
+        if "SPEECH" not in completed_stages:
+            return "SPEECH"
+        return "RESULTS"
+
+    def _table_has_assessment(self, table_name: str, assessment_id: str) -> bool:
+        try:
+            row = self._single_row_or_none(
+                self._client.table(table_name)
+                .select("assessment_id")
+                .eq("assessment_id", assessment_id)
+                .limit(1)
+                .execute()
+            )
+            return row is not None
+        except Exception:
+            return False
+>>>>>>> neurodetect-model_3
 
     @staticmethod
     def _single_row(response: Any) -> dict[str, Any]:

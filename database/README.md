@@ -10,6 +10,7 @@ NeuroDetect uses shared assessment tables plus per-game result storage:
 - `boston_naming_results`
 - `trail_making_results`
 - `trail_making_events`
+<<<<<<< HEAD
 
 ## Setup
 
@@ -17,6 +18,26 @@ NeuroDetect uses shared assessment tables plus per-game result storage:
 2. Run `schema.sql`.
 3. If your project was built incrementally, also run any missing per-game SQL files in this folder.
 4. Copy your project URL and **service role key** into the backend `.env`.
+=======
+- `speech_assessments`
+- `model3_results`
+
+## Speech Assessment & Model 3 Migration
+
+If you already have an existing `speech_assessments` table in Supabase, run:
+
+```bash
+# Execute in Supabase SQL Editor:
+database/speech_and_model3_schema.sql
+```
+
+This migration:
+- Preserves the existing `speech_assessments` table and all existing rows.
+- Non-destructively adds telemetry columns (`duration_seconds`, `audio_format`, etc.) using `ADD COLUMN IF NOT EXISTS`.
+- Creates `model3_results` referencing `speech_assessments(speech_id)` and `assessments(assessment_id)`.
+- Enforces Row Level Security (RLS) and removes unrestricted public policies.
+- Keeps service-role access backend-only.
+>>>>>>> neurodetect-model_3
 
 ## Notes
 

@@ -127,6 +127,123 @@ export interface PendingModuleSummary {
   description: string;
 }
 
+<<<<<<< HEAD
+=======
+export interface MentalHealthContextSummary {
+  phq9_score?: number | null;
+  phq9_severity?: string | null;
+  gad7_score?: number | null;
+  gad7_severity?: string | null;
+  depression_elevated?: boolean;
+  anxiety_elevated?: boolean;
+  contextual_flags?: string[];
+}
+
+export interface KeyFinding {
+  title: string;
+  status_label: string;
+  summary: string;
+  badge_variant: string;
+}
+
+export interface FusionKeyFindings {
+  cognitive_games: KeyFinding;
+  speech_analysis: KeyFinding;
+  mental_health: KeyFinding;
+}
+
+export interface FusionResultSummary {
+  available: boolean;
+  status: "completed" | "provisional" | "insufficient_data" | "pending" | string;
+  title: string;
+  interpretation:
+    | "NO_ELEVATED_INDICATORS"
+    | "FURTHER_ASSESSMENT"
+    | "ELEVATED_COGNITIVE_INDICATORS"
+    | "INSUFFICIENT_DATA";
+  interpretation_label: string;
+  conclusion: string;
+  verification_status: "COMPLETE" | "PROVISIONAL" | "UNVERIFIED";
+  provisional_warning?: string | null;
+  recommended_next_step?: string;
+  recommended_steps?: string[];
+  key_findings?: FusionKeyFindings | null;
+  model1_score?: number | null;
+  model1_category: "NORMAL" | "BORDERLINE" | "LOW" | "UNKNOWN";
+  model1_weight_percent: number;
+  model3_predicted_class?: string | null;
+  model3_category: "HC_DOMINANT" | "MCI_INDICATIVE" | "DEMENTIA_INDICATIVE" | "UNCERTAIN" | "UNKNOWN";
+  model3_weight_percent: number;
+  model3_probabilities?: Record<string, number> | null;
+  mental_health_context?: MentalHealthContextSummary;
+  contextual_flags?: string[];
+  rules_triggered?: string[];
+  explanation: string;
+  disclaimer: string;
+}
+
+export interface Model3ResultSummary {
+  available: boolean;
+  status: "pending" | "processing" | "completed" | "failed" | "awaiting_asr_verification" | string;
+  title: string;
+  description?: string | null;
+  predicted_class?: "HC" | "MCI" | "Dementia" | null;
+  hc_probability?: number | null;
+  mci_probability?: number | null;
+  dementia_probability?: number | null;
+  probabilities?: {
+    HC: number;
+    MCI: number;
+    Dementia: number;
+  } | null;
+  branch_probabilities?: Record<string, Record<string, number>> | null;
+  components_used?: string[] | null;
+  model_version?: string | null;
+  disclaimer?: string | null;
+  error_message?: string | null;
+  transcription_engine?: string | null;
+}
+
+export interface SpeechUploadResponse {
+  assessment_id: string;
+  status: string;
+  transcription_status: "pending" | "completed" | "failed" | "verified";
+  transcription_engine: string;
+  inference_status: "pending" | "completed" | "failed" | "awaiting_asr_verification";
+  predicted_class?: "HC" | "MCI" | "Dementia" | null;
+  probabilities?: Record<string, number> | null;
+  branch_probabilities?: Record<string, Record<string, number>> | null;
+  model_version?: string | null;
+  disclaimer: string;
+  error_message?: string | null;
+}
+
+export interface SpeechResultResponse {
+  assessment_id: string;
+  status: string;
+  transcript?: string | null;
+  transcription_status: "pending" | "completed" | "failed" | "verified";
+  transcription_engine: string;
+  inference_status: "pending" | "completed" | "failed" | "awaiting_asr_verification";
+  predicted_class?: "HC" | "MCI" | "Dementia" | null;
+  hc_probability?: number | null;
+  mci_probability?: number | null;
+  dementia_probability?: number | null;
+  probabilities?: {
+    HC: number;
+    MCI: number;
+    Dementia: number;
+  } | null;
+  branch_probabilities?: Record<string, Record<string, number>> | null;
+  components_used?: string[] | null;
+  model_version?: string | null;
+  disclaimer: string;
+  error_message?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+>>>>>>> neurodetect-model_3
 export interface AssessmentResults {
   assessment_id: string;
   assessment_short_id: string;
@@ -140,8 +257,13 @@ export interface AssessmentResults {
     phq9: ScreeningScoreSummary;
     gad7: ScreeningScoreSummary;
   };
+<<<<<<< HEAD
   model3: PendingModuleSummary;
   fusion: PendingModuleSummary;
+=======
+  model3: Model3ResultSummary | PendingModuleSummary;
+  fusion: FusionResultSummary | PendingModuleSummary;
+>>>>>>> neurodetect-model_3
   completed_components: ResultChecklistItem[];
   missing_components: string[];
 }
@@ -465,3 +587,33 @@ export function predictModel1(assessmentId: string): Promise<Model1PredictionRes
 export function getAssessmentResults(assessmentId: string): Promise<AssessmentResults> {
   return requestJson<AssessmentResults>(`${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/results`);
 }
+<<<<<<< HEAD
+=======
+
+export function getAssessmentFusion(assessmentId: string): Promise<FusionResultSummary> {
+  return requestJson<FusionResultSummary>(`${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/fusion`);
+}
+
+export async function uploadSpeechRecording(
+  assessmentId: string,
+  audioBlob: Blob,
+  filename = "speech_recording.webm"
+): Promise<SpeechUploadResponse> {
+  const formData = new FormData();
+  formData.append("audio", audioBlob, filename);
+
+  return requestJson<SpeechUploadResponse>(
+    `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/speech/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+}
+
+export function getSpeechResult(assessmentId: string): Promise<SpeechResultResponse> {
+  return requestJson<SpeechResultResponse>(
+    `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/speech`
+  );
+}
+>>>>>>> neurodetect-model_3

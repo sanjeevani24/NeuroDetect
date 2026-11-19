@@ -10,6 +10,10 @@ except ImportError:  # pragma: no cover - unit tests use fakes
 from app.repositories.assessment_repository import AssessmentRepository
 from app.repositories.mental_health_repository import MentalHealthRepository
 from app.repositories.model1_repository import Model1Repository
+<<<<<<< HEAD
+=======
+from app.repositories.speech_repository import SpeechRepository
+>>>>>>> neurodetect-model_3
 
 
 class ResultsRepository:
@@ -17,6 +21,10 @@ class ResultsRepository:
         self._assessment_repository = AssessmentRepository(client)
         self._mental_health_repository = MentalHealthRepository(client)
         self._model1_repository = Model1Repository(client)
+<<<<<<< HEAD
+=======
+        self._speech_repository = SpeechRepository(client)
+>>>>>>> neurodetect-model_3
 
     def get_assessment_session(self, assessment_id: str) -> dict[str, Any] | None:
         return self._assessment_repository.get_assessment_session(assessment_id)
@@ -29,3 +37,9 @@ class ResultsRepository:
 
     def get_model1_result(self, assessment_id: str) -> dict[str, Any] | None:
         return self._model1_repository.get_by_assessment(assessment_id)
+<<<<<<< HEAD
+=======
+
+    def get_speech_result(self, assessment_id: str) -> dict[str, Any] | None:
+        return self._speech_repository.get_by_assessment(assessment_id)
+>>>>>>> neurodetect-model_3
