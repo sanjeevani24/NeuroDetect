@@ -64,11 +64,8 @@ Start Assessment
   -> N-Back
   -> Boston Naming
   -> Trail Making
-<<<<<<< HEAD
-=======
   -> Speech Assessment (Cookie Theft)
   -> Results Summary
->>>>>>> neurodetect-model_3
 ```
 
 All five games use the same `assessment_id`.
@@ -110,13 +107,10 @@ Backend:
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `ENVIRONMENT`
-<<<<<<< HEAD
-=======
 - `FFMPEG_PATH` (optional, for custom FFmpeg binary location)
 - `WHISPER_MODEL_SIZE` (optional, default: `base`)
 - `WHISPER_DEVICE` (optional, default: `cpu`)
 - `WHISPER_COMPUTE_TYPE` (optional, default: `int8`)
->>>>>>> neurodetect-model_3
 
 Frontend:
 

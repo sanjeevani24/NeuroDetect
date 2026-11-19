@@ -5,10 +5,7 @@ import math
 from dataclasses import dataclass
 
 from app.assessments.schemas import AssessmentStage
-<<<<<<< HEAD
-=======
 from app.fusion.service import FusionService, get_fusion_service
->>>>>>> neurodetect-model_3
 from app.ml.model1.config import MODEL_METADATA_PATH
 from app.ml.model1.exceptions import Model1SchemaNotReadyError
 from app.repositories.results_repository import ResultsRepository
@@ -42,16 +39,10 @@ class Model1DisplayMetadata:
 
 
 class ResultsService:
-<<<<<<< HEAD
-    def __init__(self, repository: ResultsRepository):
-        self._repository = repository
-        self._model1_metadata = self._load_model1_metadata()
-=======
     def __init__(self, repository: ResultsRepository, fusion_service: FusionService | None = None):
         self._repository = repository
         self._model1_metadata = self._load_model1_metadata()
         self._fusion_service = fusion_service or get_fusion_service()
->>>>>>> neurodetect-model_3
 
     def get_results(self, assessment_id: str) -> dict:
         session = self._repository.get_assessment_session(assessment_id)
@@ -65,13 +56,9 @@ class ResultsService:
         except Model1SchemaNotReadyError:
             raise
 
-<<<<<<< HEAD
-=======
         speech_result = None
         if hasattr(self._repository, "get_speech_result"):
             speech_result = self._repository.get_speech_result(assessment_id)
-
->>>>>>> neurodetect-model_3
         completed_stages = set(session["completed_stages"])
         checklist = [
             {"key": "phq9", "label": "PHQ-9", "completed": phq9_result is not None},
@@ -83,11 +70,8 @@ class ResultsService:
             {"key": "trail_making", "label": "Trail Making", "completed": "TRAIL_MAKING" in completed_stages},
             {"key": "model1", "label": "Model 1", "completed": model1_result is not None},
         ]
-<<<<<<< HEAD
-=======
         if "SPEECH" in completed_stages or speech_result is not None:
             checklist.append({"key": "speech", "label": "Speech Assessment", "completed": speech_result is not None})
->>>>>>> neurodetect-model_3
 
         missing_components = [item["label"] for item in checklist if not item["completed"]]
         non_model1_components_complete = all(item["completed"] for item in checklist if item["key"] != "model1")
@@ -108,8 +92,6 @@ class ResultsService:
             next_stage = session["current_stage"]
             completion_message = "Some required assessment components are still incomplete."
 
-<<<<<<< HEAD
-=======
         if speech_result:
             p_hc = self._to_float(speech_result, "probability_hc") if speech_result.get("probability_hc") is not None else self._to_float(speech_result, "hc_probability")
             p_mci = self._to_float(speech_result, "probability_mci") if speech_result.get("probability_mci") is not None else self._to_float(speech_result, "mci_probability")
@@ -185,8 +167,6 @@ class ResultsService:
             mental_health_data=mental_health_data,
             speech_inference_status=speech_result.get("inference_status") if speech_result else None,
         )
-
->>>>>>> neurodetect-model_3
         return {
             "assessment_id": session["assessment_id"],
             "assessment_short_id": self._short_assessment_id(session["assessment_id"]),
@@ -195,52 +175,10 @@ class ResultsService:
             "current_stage": current_stage,
             "next_stage": next_stage,
             "completion_message": completion_message,
-<<<<<<< HEAD
-            "model1": {
-                "available": model1_result is not None,
-                "cognitive_performance_score": self._to_float(model1_result, "cognitive_performance_score"),
-                "model_name": (model1_result or {}).get("model_name") or self._model1_metadata.model_name,
-                "model_version": (model1_result or {}).get("model_version") or self._model1_metadata.model_version,
-                "feature_count": self._model1_metadata.feature_count,
-                "model_type": self._model1_metadata.model_type,
-                "score_scale_max": self._model1_metadata.score_scale_max,
-                # Evaluation belongs to the packaged model version, not an older saved prediction.
-                "evaluation": self._model1_metadata.evaluation
-                if model1_result is None or model1_result.get("model_version") == self._model1_metadata.model_version
-                else None,
-            },
-            "mental_health": {
-                "phq9": {
-                    "available": phq9_result is not None,
-                    "score": self._to_int(phq9_result, "total_score"),
-                    "score_max": 27,
-                    "severity": self._to_str(phq9_result, "severity"),
-                },
-                "gad7": {
-                    "available": gad7_result is not None,
-                    "score": self._to_int(gad7_result, "total_score"),
-                    "score_max": 21,
-                    "severity": self._to_str(gad7_result, "severity"),
-                },
-            },
-            "model3": {
-                "available": False,
-                "status": "pending",
-                "title": "Speech Assessment",
-                "description": "Speech-based cognitive analysis will be added in a future version of NeuroDetect.",
-            },
-            "fusion": {
-                "available": False,
-                "status": "pending",
-                "title": "Overall Multimodal Result",
-                "description": "Pending completion of speech analysis.",
-            },
-=======
             "model1": model1_data,
             "mental_health": mental_health_data,
             "model3": model3_data,
             "fusion": fusion_summary.model_dump(),
->>>>>>> neurodetect-model_3
             "completed_components": checklist,
             "missing_components": missing_components,
         }

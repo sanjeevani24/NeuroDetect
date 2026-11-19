@@ -755,8 +755,6 @@ select:focus-visible {
   font-size: 0.95rem;
 }
 
-<<<<<<< HEAD
-=======
 .results-card--placeholder {
   font-size: clamp(1.4rem, 3.5vw, 1.9rem);
   color: var(--secondary);
@@ -1222,7 +1220,6 @@ select:focus-visible {
   padding: 22px;
 }
 
->>>>>>> neurodetect-model_3
 .results-skeleton__block,
 .results-skeleton__card {
   border-radius: var(--radius-lg);

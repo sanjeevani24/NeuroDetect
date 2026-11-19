@@ -11,10 +11,7 @@ import { MemoryGame } from "./games/memory/MemoryGame";
 import { MMSEGame } from "./games/mmse/MMSEGame";
 import { NBackGame } from "./games/nback/NBackGame";
 import { TrailMakingGame } from "./games/trail-making/TrailMakingGame";
-<<<<<<< HEAD
-=======
 import { SpeechAssessment } from "./speech/SpeechAssessment";
->>>>>>> neurodetect-model_3
 import {
   getAssessmentResults,
   ApiError,
@@ -24,15 +21,10 @@ import {
   predictModel1,
   type AssessmentResults,
   type AssessmentSession,
-<<<<<<< HEAD
-  type GAD7Answers,
-  type MentalHealthCompletionResult,
-=======
   type FusionResultSummary,
   type GAD7Answers,
   type MentalHealthCompletionResult,
   type Model3ResultSummary,
->>>>>>> neurodetect-model_3
   type PHQ9Answers,
 } from "./services/api";
 
@@ -43,10 +35,7 @@ const UUID_PATTERN =
 const TOP_LEVEL_STEPS: AssessmentProgressStep[] = [
   { id: "mental-health", label: "How you feel" },
   { id: "cognitive", label: "Memory & thinking" },
-<<<<<<< HEAD
-=======
   { id: "speech", label: "Speech" },
->>>>>>> neurodetect-model_3
   { id: "results", label: "Results" },
 ];
 
@@ -155,8 +144,6 @@ function formatSeverityLabel(value: string | null | undefined): string {
     .join(" ");
 }
 
-<<<<<<< HEAD
-=======
 function getFusionBadgeClass(interpretation: string | undefined): string {
   switch (interpretation) {
     case "NO_ELEVATED_INDICATORS":
@@ -173,7 +160,6 @@ function getFusionBadgeClass(interpretation: string | undefined): string {
   }
 }
 
->>>>>>> neurodetect-model_3
 function formatAssessmentError(error: unknown, fallback: string): string {
   if (error instanceof ApiError) {
     if (error.status === 400 || error.status === 404) {
@@ -258,12 +244,9 @@ function normalizeCompletedStages(session: AssessmentSession | null): string[] {
   ) {
     completed.add("cognitive");
   }
-<<<<<<< HEAD
-=======
   if (session.completed_stages.includes("SPEECH")) {
     completed.add("speech");
   }
->>>>>>> neurodetect-model_3
   return [...completed];
 }
 
@@ -276,11 +259,8 @@ function getTopLevelCurrentStage(route: Route): string {
     case "boston-naming":
     case "trail-making":
       return "cognitive";
-<<<<<<< HEAD
-=======
     case "speech":
       return "speech";
->>>>>>> neurodetect-model_3
     case "results":
       return "results";
     default:
@@ -310,14 +290,11 @@ function getHeaderCopy(route: Route): { title: string; subtitle: string } {
         title: "Memory and thinking",
         subtitle: "Follow the instructions for each activity and do your best.",
       };
-<<<<<<< HEAD
-=======
     case "speech":
       return {
         title: "Picture description",
         subtitle: "Look at the picture and describe what you see out loud.",
       };
->>>>>>> neurodetect-model_3
     case "results":
       return {
         title: "Your results",
@@ -731,8 +708,6 @@ function ResultsScreen({
   const showAssessmentCompleteBanner = results.status === "completed";
   const showAwaitingModel1Banner = results.status === "awaiting_model1";
 
-<<<<<<< HEAD
-=======
   const isFusionAvailable = "interpretation" in results.fusion && results.fusion.available;
   const fusionData: FusionResultSummary | null = isFusionAvailable ? (results.fusion as FusionResultSummary) : null;
   const isProvisional = fusionData?.verification_status === "PROVISIONAL";
@@ -812,8 +787,6 @@ function ResultsScreen({
         ? "warning"
         : "neutral",
   };
-
->>>>>>> neurodetect-model_3
   return (
     <div className="page-stack">
       <section className="hero-card hero-card--section">
@@ -884,63 +857,6 @@ function ResultsScreen({
         </section>
       ) : null}
 
-<<<<<<< HEAD
-      <section className="hero-card hero-card--section">
-        <div className="section-copy">
-          <p className="hero-card__eyebrow">Cognitive Performance</p>
-          <h3>Memory and thinking results</h3>
-          <p className="hero-card__body">
-            This score summarizes performance across the cognitive tasks included in this assessment.
-          </p>
-        </div>
-        <div className="results-grid">
-          <article className="results-card results-card--score">
-            <p className="results-card__label">Cognitive Performance Score</p>
-            <div className="results-card__score">
-              {results.model1.available && results.model1.cognitive_performance_score !== null
-                ? results.model1.cognitive_performance_score.toFixed(2)
-                : "Unavailable"}
-              {showModel1Scale && results.model1.cognitive_performance_score !== null ? (
-                <span> / {results.model1.score_scale_max}</span>
-              ) : null}
-            </div>
-          </article>
-
-          <article className="results-card">
-            <p className="results-card__label">Cognitive Tasks Completed</p>
-            <div className="results-task-list" role="list" aria-label="Completed cognitive tasks">
-              {cognitiveTasks.map((item) => (
-                <div className="results-task-list__item" key={item.key} role="listitem">
-                  <span aria-hidden="true">{item.completed ? "OK" : "NO"}</span>
-                  <span>{item.label}</span>
-                  <strong>{item.completed ? "Completed" : "Pending"}</strong>
-                </div>
-              ))}
-            </div>
-          </article>
-
-          <details className="results-card results-card--details">
-            <summary>Assessment Details</summary>
-            <div className="results-details">
-              <p>
-                <strong>Model:</strong> {results.model1.model_name ?? "NeuroDetect Model 1"}
-              </p>
-              <p>
-                <strong>Version:</strong> {results.model1.model_version ?? "1.0.0"}
-              </p>
-              <p>
-                <strong>Features:</strong> {results.model1.feature_count ?? "Unavailable"}
-              </p>
-              <p>
-                <strong>Type:</strong> {results.model1.model_type ?? "Cognitive performance regression"}
-              </p>
-            </div>
-          </details>
-        </div>
-      </section>
-
-      <ModelEvaluation evaluation={results.model1.evaluation} />
-=======
       {/* SECTION A: FINAL ASSESSMENT CONCLUSION */}
       <section className="hero-card hero-card--section results-hero-section" aria-labelledby="conclusion-section-title">
         <div className="section-copy">
@@ -1139,7 +1055,47 @@ function ResultsScreen({
               )}
             </article>
 
-            {/* D2. Model 3 Details: Probabilities, Branch Probabilities, Engine */}
+            {/* D2. Model 2 Details: PHQ-9 and GAD-7 Mental Health Screening */}
+            <article className="results-card" style={{ marginBottom: "16px" }}>
+              <p className="results-card__label">Model 2 · Mental Health Screening (Non-Cognitive Context)</p>
+              <div className="results-grid results-grid--two" style={{ marginTop: "12px" }}>
+                <div>
+                  <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>PHQ-9 (Depressive Symptoms)</p>
+                  <div className="results-card__score results-card__score--small">
+                    {results.mental_health.phq9.available && results.mental_health.phq9.score !== null
+                      ? `${results.mental_health.phq9.score} / ${results.mental_health.phq9.score_max}`
+                      : "Unavailable"}
+                  </div>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "0.92rem" }}>
+                    <strong>Severity:</strong> {formatSeverityLabel(results.mental_health.phq9.severity)}
+                  </p>
+                </div>
+
+                <div>
+                  <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>GAD-7 (Anxiety Symptoms)</p>
+                  <div className="results-card__score results-card__score--small">
+                    {results.mental_health.gad7.available && results.mental_health.gad7.score !== null
+                      ? `${results.mental_health.gad7.score} / ${results.mental_health.gad7.score_max}`
+                      : "Unavailable"}
+                  </div>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "0.92rem" }}>
+                    <strong>Severity:</strong> {formatSeverityLabel(results.mental_health.gad7.severity)}
+                  </p>
+                </div>
+              </div>
+
+              {fusionData?.contextual_flags && fusionData.contextual_flags.length > 0 && (
+                <div className="fusion-flags-list" style={{ marginTop: "14px" }}>
+                  {fusionData.contextual_flags.map((flag: string, idx: number) => (
+                    <div key={idx} className="fusion-flag-card">
+                      ℹ️ <strong>Clinical Context:</strong> {flag}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </article>
+
+            {/* D3. Model 3 Details: Probabilities, Branch Probabilities, Engine */}
             <article className="results-card" style={{ marginBottom: "16px" }}>
               <p className="results-card__label">Model 3 · Speech Analysis (PROCESS-2 CTD Multimodal Model)</p>
               <div className="results-grid results-grid--two" style={{ marginTop: "12px" }}>
@@ -1221,46 +1177,6 @@ function ResultsScreen({
               </div>
             </article>
 
-            {/* D3. Model 2 Details: PHQ-9 and GAD-7 Mental Health Screening */}
-            <article className="results-card" style={{ marginBottom: "16px" }}>
-              <p className="results-card__label">Model 2 · Mental Health Screening (Non-Cognitive Context)</p>
-              <div className="results-grid results-grid--two" style={{ marginTop: "12px" }}>
-                <div>
-                  <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>PHQ-9 (Depressive Symptoms)</p>
-                  <div className="results-card__score results-card__score--small">
-                    {results.mental_health.phq9.available && results.mental_health.phq9.score !== null
-                      ? `${results.mental_health.phq9.score} / ${results.mental_health.phq9.score_max}`
-                      : "Unavailable"}
-                  </div>
-                  <p style={{ margin: "4px 0 0 0", fontSize: "0.92rem" }}>
-                    <strong>Severity:</strong> {formatSeverityLabel(results.mental_health.phq9.severity)}
-                  </p>
-                </div>
-
-                <div>
-                  <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "var(--text-muted)" }}>GAD-7 (Anxiety Symptoms)</p>
-                  <div className="results-card__score results-card__score--small">
-                    {results.mental_health.gad7.available && results.mental_health.gad7.score !== null
-                      ? `${results.mental_health.gad7.score} / ${results.mental_health.gad7.score_max}`
-                      : "Unavailable"}
-                  </div>
-                  <p style={{ margin: "4px 0 0 0", fontSize: "0.92rem" }}>
-                    <strong>Severity:</strong> {formatSeverityLabel(results.mental_health.gad7.severity)}
-                  </p>
-                </div>
-              </div>
-
-              {fusionData?.contextual_flags && fusionData.contextual_flags.length > 0 && (
-                <div className="fusion-flags-list" style={{ marginTop: "14px" }}>
-                  {fusionData.contextual_flags.map((flag: string, idx: number) => (
-                    <div key={idx} className="fusion-flag-card">
-                      ℹ️ <strong>Clinical Context:</strong> {flag}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </article>
-
             {/* D4. Multimodal Fusion Synthesis Internals */}
             {isFusionAvailable && fusionData && (
               <article className="results-card">
@@ -1289,7 +1205,6 @@ function ResultsScreen({
           </div>
         </details>
       </section>
->>>>>>> neurodetect-model_3
 
       {model1Status === "error" && model1Error ? (
         <ErrorState
@@ -1303,52 +1218,10 @@ function ResultsScreen({
         />
       ) : null}
 
-<<<<<<< HEAD
-      <section className="hero-card hero-card--section">
-        <div className="section-copy">
-          <p className="hero-card__eyebrow">Mental Health Screening</p>
-          <h3>Your mood and wellbeing</h3>
-          <p className="hero-card__body">
-            These questionnaires provide screening scores based on the responses provided during the assessment. They are
-            not diagnostic results.
-          </p>
-        </div>
-        <div className="results-grid results-grid--two">
-          <article className="results-card">
-            <p className="results-card__label">PHQ-9</p>
-            <div className="results-card__score results-card__score--small">
-              {results.mental_health.phq9.available && results.mental_health.phq9.score !== null
-                ? `${results.mental_health.phq9.score} / ${results.mental_health.phq9.score_max}`
-                : "Unavailable"}
-            </div>
-            <p>
-              <strong>Severity:</strong> {formatSeverityLabel(results.mental_health.phq9.severity)}
-            </p>
-          </article>
-
-          <article className="results-card">
-            <p className="results-card__label">GAD-7</p>
-            <div className="results-card__score results-card__score--small">
-              {results.mental_health.gad7.available && results.mental_health.gad7.score !== null
-                ? `${results.mental_health.gad7.score} / ${results.mental_health.gad7.score_max}`
-                : "Unavailable"}
-            </div>
-            <p>
-              <strong>Severity:</strong> {formatSeverityLabel(results.mental_health.gad7.severity)}
-            </p>
-          </article>
-        </div>
-        <p className="results-disclaimer">
-          These screening scores are intended to provide an indication of symptom severity based on the questionnaire
-          responses. They do not constitute a medical diagnosis.
-        </p>
-      </section>
-=======
       <p className="results-disclaimer">
         {("disclaimer" in results.fusion && results.fusion.disclaimer) ||
           "NeuroDetect is an experimental multimodal cognitive screening research prototype, not a medical device or diagnostic instrument. Results must be reviewed in clinical context by qualified healthcare professionals."}
       </p>
->>>>>>> neurodetect-model_3
 
     </div>
   );
@@ -1549,11 +1422,7 @@ function App() {
     if (!succeeded) {
       console.error("Model 1 inference failed after Trail Making completion.");
     }
-<<<<<<< HEAD
-    navigate({ kind: "results", assessmentId });
-=======
     navigate({ kind: "speech", assessmentId });
->>>>>>> neurodetect-model_3
   }
 
   async function handleRetryModel1FromResults() {
@@ -1661,17 +1530,12 @@ function App() {
       case "trail-making":
         return <TrailMakingGame assessmentId={route.assessmentId} onComplete={() => void handleTrailMakingComplete(route.assessmentId)} />;
       case "speech":
-<<<<<<< HEAD
-        navigate({ kind: "results", assessmentId: route.assessmentId }, true);
-        return null;
-=======
         return (
           <SpeechAssessment
             assessmentId={route.assessmentId}
             onComplete={() => navigate({ kind: "results", assessmentId: route.assessmentId })}
           />
         );
->>>>>>> neurodetect-model_3
       case "results":
         return (
           <ResultsScreen

@@ -17,10 +17,7 @@ from app.games.memory.router import router as memory_router
 from app.mental_health.router import router as mental_health_router
 from app.ml.model1.router import router as model1_router
 from app.results.router import router as results_router
-<<<<<<< HEAD
-=======
 from app.speech.router import router as speech_router
->>>>>>> neurodetect-model_3
 
 app = FastAPI(
     title="NeuroDetect API",
@@ -40,10 +37,7 @@ app.include_router(assessments_router)
 app.include_router(mental_health_router)
 app.include_router(model1_router)
 app.include_router(results_router)
-<<<<<<< HEAD
-=======
 app.include_router(speech_router)
->>>>>>> neurodetect-model_3
 app.include_router(memory_router)
 app.include_router(mmse_router)
 app.include_router(nback_router)

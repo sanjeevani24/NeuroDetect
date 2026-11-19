@@ -10,7 +10,8 @@ NeuroDetect uses shared assessment tables plus per-game result storage:
 - `boston_naming_results`
 - `trail_making_results`
 - `trail_making_events`
-<<<<<<< HEAD
+- `speech_assessments`
+- `model3_results`
 
 ## Setup
 
@@ -18,9 +19,6 @@ NeuroDetect uses shared assessment tables plus per-game result storage:
 2. Run `schema.sql`.
 3. If your project was built incrementally, also run any missing per-game SQL files in this folder.
 4. Copy your project URL and **service role key** into the backend `.env`.
-=======
-- `speech_assessments`
-- `model3_results`
 
 ## Speech Assessment & Model 3 Migration
 
@@ -37,7 +35,6 @@ This migration:
 - Creates `model3_results` referencing `speech_assessments(speech_id)` and `assessments(assessment_id)`.
 - Enforces Row Level Security (RLS) and removes unrestricted public policies.
 - Keeps service-role access backend-only.
->>>>>>> neurodetect-model_3
 
 ## Notes
 

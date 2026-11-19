@@ -127,8 +127,6 @@ export interface PendingModuleSummary {
   description: string;
 }
 
-<<<<<<< HEAD
-=======
 export interface MentalHealthContextSummary {
   phq9_score?: number | null;
   phq9_severity?: string | null;
@@ -242,8 +240,6 @@ export interface SpeechResultResponse {
   created_at?: string | null;
   updated_at?: string | null;
 }
-
->>>>>>> neurodetect-model_3
 export interface AssessmentResults {
   assessment_id: string;
   assessment_short_id: string;
@@ -257,13 +253,8 @@ export interface AssessmentResults {
     phq9: ScreeningScoreSummary;
     gad7: ScreeningScoreSummary;
   };
-<<<<<<< HEAD
-  model3: PendingModuleSummary;
-  fusion: PendingModuleSummary;
-=======
   model3: Model3ResultSummary | PendingModuleSummary;
   fusion: FusionResultSummary | PendingModuleSummary;
->>>>>>> neurodetect-model_3
   completed_components: ResultChecklistItem[];
   missing_components: string[];
 }
@@ -587,9 +578,6 @@ export function predictModel1(assessmentId: string): Promise<Model1PredictionRes
 export function getAssessmentResults(assessmentId: string): Promise<AssessmentResults> {
   return requestJson<AssessmentResults>(`${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/results`);
 }
-<<<<<<< HEAD
-=======
-
 export function getAssessmentFusion(assessmentId: string): Promise<FusionResultSummary> {
   return requestJson<FusionResultSummary>(`${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/fusion`);
 }
@@ -616,4 +604,3 @@ export function getSpeechResult(assessmentId: string): Promise<SpeechResultRespo
     `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/speech`
   );
 }
->>>>>>> neurodetect-model_3
