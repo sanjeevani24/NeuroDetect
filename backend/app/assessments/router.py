@@ -29,6 +29,7 @@ def create_assessment_session(
                 age=request.age,
                 sex=request.sex,
                 education_years=request.education_years,
+                assessment_type=request.assessment_type,
             )
         )
     except Exception as exc:

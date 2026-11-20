@@ -14,6 +14,7 @@ export interface AssessmentSession {
   age: number;
   sex: string;
   education_years: number;
+  assessment_type?: "COGNITIVE" | "MRI_ONLY";
   current_stage:
     | "PATIENT_INFO"
     | "PHQ_GAD"
@@ -24,6 +25,7 @@ export interface AssessmentSession {
     | "BOSTON_NAMING"
     | "TRAIL_MAKING"
     | "SPEECH"
+    | "MRI"
     | "RESULTS";
   completed_stages: string[];
 }
@@ -33,6 +35,7 @@ export interface CreateAssessmentSessionPayload {
   age: number;
   sex: string;
   education_years: number;
+  assessment_type?: "COGNITIVE" | "MRI_ONLY";
 }
 
 export interface PHQ9Answers {
@@ -602,5 +605,56 @@ export async function uploadSpeechRecording(
 export function getSpeechResult(assessmentId: string): Promise<SpeechResultResponse> {
   return requestJson<SpeechResultResponse>(
     `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/speech`
+  );
+}
+
+export interface MriBinaryProbabilities {
+  no_dementia: number;
+  dementia: number;
+}
+
+export interface MriResultResponse {
+  assessment_id: string;
+  status: string;
+  processing_status: string;
+  image_filename?: string | null;
+  image_format?: string | null;
+  image_size_bytes?: number | null;
+  predicted_class: string;
+  predicted_class_index: number;
+  probability_non_demented: number;
+  probability_very_mild: number;
+  probability_mild: number;
+  probability_moderate: number;
+  class_probabilities: Record<string, number>;
+  binary_prediction: string;
+  binary_probabilities: MriBinaryProbabilities;
+  model_name: string;
+  model_version: string;
+  disclaimer: string;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
+export async function uploadMriScan(
+  assessmentId: string,
+  imageFile: File | Blob,
+  filename = "mri_scan.png"
+): Promise<MriResultResponse> {
+  const formData = new FormData();
+  formData.append("image", imageFile, filename);
+
+  return requestJson<MriResultResponse>(
+    `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/mri/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+}
+
+export function getMriResult(assessmentId: string): Promise<MriResultResponse> {
+  return requestJson<MriResultResponse>(
+    `${API_BASE_URL}/api/assessments/${encodeURIComponent(assessmentId)}/mri`
   );
 }

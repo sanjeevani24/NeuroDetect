@@ -16,6 +16,7 @@ from app.games.mmse.router import router as mmse_router
 from app.games.memory.router import router as memory_router
 from app.mental_health.router import router as mental_health_router
 from app.ml.model1.router import router as model1_router
+from app.mri.router import router as mri_router
 from app.results.router import router as results_router
 from app.speech.router import router as speech_router
 
@@ -36,6 +37,7 @@ app.add_middleware(
 app.include_router(assessments_router)
 app.include_router(mental_health_router)
 app.include_router(model1_router)
+app.include_router(mri_router)
 app.include_router(results_router)
 app.include_router(speech_router)
 app.include_router(memory_router)

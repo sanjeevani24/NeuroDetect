@@ -1,0 +1,38 @@
+```mermaid
+flowchart TD
+    User["Patient / Clinician Browser"] --> Landing["Landing Page (Route: /)"]
+    
+    subgraph Selection ["Assessment Pathway Selection"]
+        Landing --> ChoiceA["Pathway A: MRI-Only Scan Analysis"]
+        Landing --> ChoiceB["Pathway B: Multimodal Cognitive Screening"]
+    end
+    
+    subgraph PathwayA ["Pathway A: MRI Neuroimaging Pipeline"]
+        ChoiceA --> RegA["Patient Registration (Optional/Shared)"]
+        RegA --> MriUpload["MRI Upload Interface (Drag & Drop)"]
+        MriUpload --> MriAPI["FastAPI /api/mri/analyze (POST)"]
+        MriAPI --> PreprocMRI["2D Slice Preprocessing (224x224x3, Normalization)"]
+        PreprocMRI --> Model4["Model 4: EfficientNetB0 (4-Class Softmax)"]
+        Model4 --> MriResult["MRI Classification: Non-Dem, Very Mild, Mild, Moderate"]
+        MriResult --> MriDB["Supabase: mri_assessments (status: COMPLETED)"]
+    end
+    
+    subgraph PathwayB ["Pathway B: Multimodal Cognitive Pipeline"]
+        ChoiceB --> RegB["Patient Registration (Shared Table: patients)"]
+        RegB --> Model2["Model 2: Mental Health (PHQ-9 & GAD-7)"]
+        Model2 --> CogGames["Cognitive Games (5 Tasks: MMSE, Word Recall, Boston Naming, N-Back, TMT)"]
+        CogGames --> Model1["Model 1: XGBoost Regressor (47 Engineered Features)"]
+        CogGames --> AudioRec["Speech Recording (Boston Cookie Theft, WebRTC)"]
+        AudioRec --> AudioPreproc["Audio Validation & 16kHz PCM WAV Conversion"]
+        AudioPreproc --> ASR["Faster-Whisper Local ASR Transcription"]
+        AudioPreproc --> Model3["Model 3: Tri-branch Multimodal Classifier\n(Wav2Vec2 + 42 Acoustic + DistilBERT)"]
+        Model1 --> RuleFusion["Deterministic Rule-Based Fusion Engine\n(50% Games + 50% Speech)"]
+        Model3 --> RuleFusion
+        Model2 -. Contextual Flags .-> RuleFusion
+        RuleFusion --> FinalReport["Results Dashboard\n(3 Cognitive Conclusions + Mental Health Context)"]
+        FinalReport --> CogDB["Supabase: cognitive_games, speech_assessments, model3_results"]
+    end
+    
+    MriDB --> SupabaseDB[("Supabase PostgreSQL Database")]
+    CogDB --> SupabaseDB
+```

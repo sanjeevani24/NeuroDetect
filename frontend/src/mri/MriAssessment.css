@@ -1,0 +1,405 @@
+/* NeuroDetect MRI Assessment Styles */
+
+.mri-screen-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  font-family: inherit;
+  color: #1e293b;
+}
+
+.mri-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.mri-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 9999px;
+  background-color: #e0f2fe;
+  color: #0369a1;
+  margin-bottom: 0.75rem;
+}
+
+.mri-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
+
+.mri-subtitle {
+  font-size: 1rem;
+  color: #64748b;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* Patient info bar */
+.mri-patient-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  margin-bottom: 2rem;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.mri-patient-name {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Upload Card & Dropzone */
+.mri-upload-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.mri-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 0.75rem;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+}
+
+.mri-dropzone:hover,
+.mri-dropzone.active {
+  border-color: #0284c7;
+  background: #f0f9ff;
+}
+
+.mri-dropzone-icon {
+  width: 48px;
+  height: 48px;
+  color: #0284c7;
+  margin-bottom: 1rem;
+}
+
+.mri-dropzone-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 0.25rem;
+}
+
+.mri-dropzone-subtext {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0 0 1rem;
+}
+
+.mri-dropzone-formats {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.mri-file-input {
+  display: none;
+}
+
+/* Preview Card */
+.mri-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.mri-preview-image {
+  max-width: 280px;
+  max-height: 280px;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 2px solid #0f172a;
+  background: #000;
+  object-fit: contain;
+}
+
+.mri-file-meta {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.mri-remove-btn {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  text-decoration: underline;
+}
+
+.mri-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.mri-btn {
+  padding: 0.75rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+}
+
+.mri-btn-primary {
+  background-color: #0284c7;
+  color: white;
+}
+
+.mri-btn-primary:hover:not(:disabled) {
+  background-color: #0369a1;
+}
+
+.mri-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mri-btn-secondary {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.mri-btn-secondary:hover {
+  background-color: #e2e8f0;
+}
+
+/* Error message banner */
+.mri-error-banner {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+/* Results Display */
+.mri-results-summary-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .mri-results-summary-card {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+}
+
+.mri-result-slice-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.mri-result-slice-img {
+  width: 240px;
+  height: 240px;
+  border-radius: 0.5rem;
+  background: #000;
+  object-fit: contain;
+  border: 2px solid #334155;
+}
+
+.mri-result-slice-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+}
+
+.mri-primary-prediction-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mri-pred-label-heading {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.mri-pred-class-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.mri-pred-non-demented {
+  color: #16a34a;
+}
+
+.mri-pred-mild {
+  color: #d97706;
+}
+
+.mri-pred-moderate {
+  color: #dc2626;
+}
+
+/* Binary classification badge */
+.mri-binary-badge-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  width: fit-content;
+}
+
+.mri-binary-tag {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.mri-binary-tag.no-dementia {
+  color: #16a34a;
+}
+
+.mri-binary-tag.dementia {
+  color: #dc2626;
+}
+
+.mri-binary-subtext {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* 4-Class Breakdown Section */
+.mri-breakdown-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.mri-section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 1.25rem;
+}
+
+.mri-prob-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mri-prob-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mri-prob-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.mri-prob-percentage {
+  font-variant-numeric: tabular-nums;
+  color: #0f172a;
+}
+
+.mri-bar-track {
+  height: 10px;
+  background-color: #f1f5f9;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.mri-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mri-bar-fill.highlight {
+  background: linear-gradient(90deg, #0284c7, #0369a1);
+}
+
+.mri-bar-fill.normal {
+  background-color: #cbd5e1;
+}
+
+/* Disclaimer Callout */
+.mri-disclaimer-card {
+  background-color: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.mri-disclaimer-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  color: #d97706;
+}
+
+.mri-disclaimer-text {
+  font-size: 0.8125rem;
+  color: #92400e;
+  line-height: 1.5;
+  margin: 0;
+}

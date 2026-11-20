@@ -5,6 +5,8 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 
+AssessmentType = Literal["COGNITIVE", "MRI_ONLY"]
+
 AssessmentStage = Literal[
     "PATIENT_INFO",
     "PHQ_GAD",
@@ -15,6 +17,7 @@ AssessmentStage = Literal[
     "BOSTON_NAMING",
     "TRAIL_MAKING",
     "SPEECH",
+    "MRI",
     "RESULTS",
 ]
 
@@ -24,6 +27,7 @@ class PatientCreateRequest(BaseModel):
     age: int = Field(gt=0)
     sex: str = Field(min_length=1)
     education_years: int = Field(ge=0)
+    assessment_type: AssessmentType = "COGNITIVE"
 
     @field_validator("full_name", "sex")
     @classmethod
@@ -41,5 +45,6 @@ class AssessmentSessionResponse(BaseModel):
     age: int
     sex: str
     education_years: int
+    assessment_type: AssessmentType = "COGNITIVE"
     current_stage: AssessmentStage
     completed_stages: list[AssessmentStage]

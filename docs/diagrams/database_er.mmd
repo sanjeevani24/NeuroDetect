@@ -1,0 +1,70 @@
+```mermaid
+erDiagram
+    patients ||--o{ assessments : "has"
+    patients ||--o{ mri_assessments : "links to"
+    assessments ||--o| mri_assessments : "executes (MRI_ONLY)"
+    assessments ||--o{ cognitive_games : "records (COGNITIVE)"
+    assessments ||--o| speech_assessments : "records (COGNITIVE)"
+    assessments ||--o| model3_results : "produces (COGNITIVE)"
+
+    patients {
+        uuid id PK
+        text full_name
+        int age
+        text gender
+        int education_years
+        timestamptz created_at
+    }
+
+    assessments {
+        uuid id PK
+        uuid patient_id FK
+        text assessment_type "COGNITIVE | MRI_ONLY"
+        text status "PENDING | IN_PROGRESS | COMPLETED"
+        timestamptz created_at
+        timestamptz completed_at
+    }
+
+    mri_assessments {
+        uuid id PK
+        uuid assessment_id FK
+        uuid patient_id FK
+        text predicted_class
+        numeric confidence
+        jsonb probabilities
+        text model_version
+        text gradcam_path
+        timestamptz created_at
+    }
+
+    cognitive_games {
+        uuid id PK
+        uuid assessment_id FK
+        text game_name
+        jsonb telemetry_data
+        jsonb features
+        numeric score
+        timestamptz created_at
+    }
+
+    speech_assessments {
+        uuid id PK
+        uuid assessment_id FK
+        text audio_url
+        text transcript
+        jsonb model3_probabilities
+        text leading_prediction
+        timestamptz created_at
+    }
+
+    model3_results {
+        uuid id PK
+        uuid assessment_id FK
+        numeric hc_prob
+        numeric mci_prob
+        numeric dementia_prob
+        text predicted_class
+        jsonb acoustic_features
+        timestamptz created_at
+    }
+```

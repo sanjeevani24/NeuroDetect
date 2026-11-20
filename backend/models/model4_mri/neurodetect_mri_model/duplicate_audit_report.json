@@ -1,0 +1,87 @@
+{
+  "n_files_found": 11519,
+  "n_readable": 11519,
+  "n_corrupt_or_unreadable": 0,
+  "n_blank_images": 0,
+  "exact_duplicates": {
+    "n_groups": 11337,
+    "n_groups_with_copies": 182,
+    "n_images_in_groups_with_copies": 364,
+    "n_redundant_images": 182,
+    "largest_group": 2
+  },
+  "exact_duplicate_groups_with_conflicting_labels": 0,
+  "exact_duplicate_groups_spanning_original_split_folders": 0,
+  "near_duplicates": {
+    "method": "pHash 64-bit, Hamming distance <= threshold",
+    "threshold_requested": 4,
+    "threshold_used": 1,
+    "n_groups": 10224,
+    "n_groups_with_copies": 747,
+    "n_images_in_groups_with_copies": 2042,
+    "n_redundant_images": 1295,
+    "largest_group": 29,
+    "groups_with_conflicting_labels": 15,
+    "groups_spanning_original_split_folders": 80
+  },
+  "final_split_groups": {
+    "basis": "exact + near-duplicate",
+    "n_groups": 10224,
+    "n_groups_with_copies": 747,
+    "n_images_in_groups_with_copies": 2042,
+    "n_redundant_images": 1295,
+    "largest_group": 29
+  },
+  "threshold_sweep": [
+    {
+      "phash_threshold": 4,
+      "n_groups": 1735,
+      "n_groups_with_copies": 535,
+      "n_images_in_groups_with_copies": 10319,
+      "n_redundant_images": 9784,
+      "largest_group": 8725
+    },
+    {
+      "phash_threshold": 3,
+      "n_groups": 6251,
+      "n_groups_with_copies": 1310,
+      "n_images_in_groups_with_copies": 6578,
+      "n_redundant_images": 5268,
+      "largest_group": 2316
+    },
+    {
+      "phash_threshold": 2,
+      "n_groups": 6251,
+      "n_groups_with_copies": 1310,
+      "n_images_in_groups_with_copies": 6578,
+      "n_redundant_images": 5268,
+      "largest_group": 2316
+    },
+    {
+      "phash_threshold": 1,
+      "n_groups": 10224,
+      "n_groups_with_copies": 747,
+      "n_images_in_groups_with_copies": 2042,
+      "n_redundant_images": 1295,
+      "largest_group": 29
+    },
+    {
+      "phash_threshold": 0,
+      "n_groups": 10224,
+      "n_groups_with_copies": 747,
+      "n_images_in_groups_with_copies": 2042,
+      "n_redundant_images": 1295,
+      "largest_group": 29
+    }
+  ],
+  "subject_ids": {
+    "available": false,
+    "coverage": 0.0,
+    "n_subjects": 0
+  },
+  "limitations": [
+    "Perceptual hashing does not establish patient independence.",
+    "Flipped, rotated or heavily re-contrasted copies are not detected.",
+    "Without subject identifiers, subject-level independence cannot be verified."
+  ]
+}

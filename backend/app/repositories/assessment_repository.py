@@ -20,6 +20,7 @@ class AssessmentRepository:
         age: int,
         sex: str,
         education_years: int,
+        assessment_type: str = "COGNITIVE",
     ) -> dict[str, Any]:
         patient_row = self._single_row(
             self._client.table("patients")
@@ -33,22 +34,56 @@ class AssessmentRepository:
             )
             .execute()
         )
-        assessment_row = self._single_row(
-            self._client.table("assessments")
-            .insert({"patient_id": patient_row["patient_id"]})
-            .execute()
-        )
+        assessment_insert_data = {"patient_id": patient_row["patient_id"]}
+        if assessment_type:
+            assessment_insert_data["assessment_type"] = assessment_type
+
+        try:
+            assessment_row = self._single_row(
+                self._client.table("assessments")
+                .insert(assessment_insert_data)
+                .execute()
+            )
+        except Exception as exc:
+            # Fallback if assessment_type column does not exist yet in database
+            if "assessment_type" in assessment_insert_data and "assessment_type" in str(exc):
+                assessment_insert_data.pop("assessment_type", None)
+                assessment_row = self._single_row(
+                    self._client.table("assessments")
+                    .insert(assessment_insert_data)
+                    .execute()
+                )
+            else:
+                raise
 
         return self.get_assessment_session(str(assessment_row["assessment_id"]))
 
     def get_assessment_session(self, assessment_id: str) -> dict[str, Any] | None:
-        assessment_row = self._single_row_or_none(
-            self._client.table("assessments")
-            .select("assessment_id, patient_id")
-            .eq("assessment_id", assessment_id)
-            .limit(1)
-            .execute()
-        )
+        assessment_row = None
+        try:
+            assessment_row = self._single_row_or_none(
+                self._client.table("assessments")
+                .select("assessment_id, patient_id, assessment_type")
+                .eq("assessment_id", assessment_id)
+                .limit(1)
+                .execute()
+            )
+        except Exception:
+            assessment_row = None
+
+        if assessment_row is None:
+            # Fallback for schemas without assessment_type column
+            try:
+                assessment_row = self._single_row_or_none(
+                    self._client.table("assessments")
+                    .select("assessment_id, patient_id")
+                    .eq("assessment_id", assessment_id)
+                    .limit(1)
+                    .execute()
+                )
+            except Exception:
+                return None
+
         if assessment_row is None:
             return None
 
@@ -62,7 +97,14 @@ class AssessmentRepository:
         if patient_row is None:
             return None
 
-        completed_stages = self._completed_stages(assessment_id)
+        assessment_type = assessment_row.get("assessment_type") or "COGNITIVE"
+        if assessment_type == "MRI_ONLY":
+            completed_stages = self._completed_mri_stages(assessment_id)
+            current_stage = "RESULTS" if "MRI" in completed_stages else "MRI"
+        else:
+            completed_stages = self._completed_stages(assessment_id)
+            current_stage = self._current_stage(completed_stages)
+
         return {
             "patient_id": str(patient_row["patient_id"]),
             "assessment_id": str(assessment_row["assessment_id"]),
@@ -70,9 +112,16 @@ class AssessmentRepository:
             "age": int(patient_row["age"]),
             "sex": patient_row["sex"],
             "education_years": int(patient_row["education_years"]),
-            "current_stage": self._current_stage(completed_stages),
+            "assessment_type": assessment_type,
+            "current_stage": current_stage,
             "completed_stages": completed_stages,
         }
+
+    def _completed_mri_stages(self, assessment_id: str) -> list[str]:
+        completed: list[str] = []
+        if self._table_has_assessment("mri_assessments", assessment_id):
+            completed.append("MRI")
+        return completed
 
     def assessment_exists(self, assessment_id: str) -> bool:
         try:

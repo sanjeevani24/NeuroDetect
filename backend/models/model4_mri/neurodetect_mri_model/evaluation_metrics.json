@@ -1,0 +1,294 @@
+{
+  "model_name": "NeuroDetect-MRI-EfficientNetB0",
+  "selected_model": "EfficientNetB0",
+  "selection_criterion": "highest validation macro-F1 (ties: lower validation loss); test set not used for selection",
+  "evaluation_level": "image-level",
+  "leakage_status": "GROUP_LEVEL_SPLIT_NO_SUBJECT_IDS",
+  "leakage_note": "No subject identifiers exist; subject-level independence is NOT verified. Metrics are image-level and may be optimistic.",
+  "split_warnings": [],
+  "n_test_images": 1728,
+  "four_class_test_metrics": {
+    "accuracy": 0.7100694444444444,
+    "precision_macro": 0.7261445024508177,
+    "recall_macro": 0.7162083464833486,
+    "f1_macro": 0.703360319880272,
+    "precision_weighted": 0.715051375244479,
+    "recall_weighted": 0.7100694444444444,
+    "f1_weighted": 0.6935180731086713,
+    "macro_computed_over_classes": [
+      "Non-Demented",
+      "Very Mildly Demented",
+      "Mildly Demented",
+      "Moderately Demented"
+    ],
+    "per_class": {
+      "Non-Demented": {
+        "precision": 0.597457627118644,
+        "recall": 0.88125,
+        "f1": 0.7121212121212122,
+        "support": 480
+      },
+      "Very Mildly Demented": {
+        "precision": 0.6352459016393442,
+        "recall": 0.3436807095343681,
+        "f1": 0.4460431654676259,
+        "support": 451
+      },
+      "Mildly Demented": {
+        "precision": 0.6795865633074936,
+        "recall": 0.6399026763990268,
+        "f1": 0.6591478696741855,
+        "support": 411
+      },
+      "Moderately Demented": {
+        "precision": 0.9922879177377892,
+        "recall": 1.0,
+        "f1": 0.9961290322580645,
+        "support": 386
+      }
+    },
+    "confusion_matrix": [
+      [
+        423,
+        30,
+        27,
+        0
+      ],
+      [
+        197,
+        155,
+        97,
+        2
+      ],
+      [
+        88,
+        59,
+        263,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        386
+      ]
+    ],
+    "roc_auc_ovr_per_class": {
+      "Non-Demented": 0.9211838942307692,
+      "Very Mildly Demented": 0.8548722320710784,
+      "Mildly Demented": 0.8895077842253739,
+      "Moderately Demented": 1.0
+    },
+    "roc_auc_ovr_macro": 0.9163909776318054,
+    "roc_auc_ovr_weighted": 0.9139486951455175,
+    "roc_auc_all_four_classes_valid": true
+  },
+  "bootstrap_95ci_group_resampling": {
+    "accuracy_ci95": [
+      0.6808210886172342,
+      0.7391334692787609
+    ],
+    "macro_f1_ci95": [
+      0.6813212760990878,
+      0.7266357893433308
+    ]
+  },
+  "binary_test_metrics": {
+    "definition": "No Dementia = Non-Demented; Dementia = Very Mildly / Mildly / Moderately Demented (inherited dataset labels, not a clinical definition)",
+    "threshold_on_p_dementia": 0.5,
+    "accuracy": 0.8234953703703703,
+    "precision_dementia": 0.9243924392439244,
+    "recall_sensitivity_dementia": 0.8229166666666666,
+    "specificity_no_dementia": 0.825,
+    "f1_dementia": 0.870707927087749,
+    "roc_auc": 0.9211838942307693,
+    "confusion_matrix_[[TN,FP],[FN,TP]]": [
+      [
+        396,
+        84
+      ],
+      [
+        221,
+        1027
+      ]
+    ],
+    "n_test_no_dementia": 480,
+    "n_test_dementia": 1248,
+    "evaluation_level": "image-level"
+  },
+  "validation_metrics_by_model": {
+    "CNN_Baseline": {
+      "accuracy": 0.5700231481481481,
+      "precision_macro": 0.7375492990801321,
+      "recall_macro": 0.5645553798545552,
+      "f1_macro": 0.5184963313696964,
+      "precision_weighted": 0.730844522817341,
+      "recall_weighted": 0.5700231481481481,
+      "f1_weighted": 0.5149935187726391,
+      "macro_computed_over_classes": [
+        "Non-Demented",
+        "Very Mildly Demented",
+        "Mildly Demented",
+        "Moderately Demented"
+      ],
+      "per_class": {
+        "Non-Demented": {
+          "precision": 0.5401891252955082,
+          "recall": 0.9520833333333333,
+          "f1": 0.6892911010558069,
+          "support": 480
+        },
+        "Very Mildly Demented": {
+          "precision": 0.9523809523809523,
+          "recall": 0.08869179600886919,
+          "f1": 0.16227180527383367,
+          "support": 451
+        },
+        "Mildly Demented": {
+          "precision": 0.4576271186440678,
+          "recall": 0.7226277372262774,
+          "f1": 0.560377358490566,
+          "support": 411
+        },
+        "Moderately Demented": {
+          "precision": 1.0,
+          "recall": 0.4948186528497409,
+          "f1": 0.6620450606585788,
+          "support": 386
+        }
+      },
+      "confusion_matrix": [
+        [
+          457,
+          0,
+          23,
+          0
+        ],
+        [
+          276,
+          40,
+          135,
+          0
+        ],
+        [
+          112,
+          2,
+          297,
+          0
+        ],
+        [
+          1,
+          0,
+          194,
+          191
+        ]
+      ],
+      "roc_auc_ovr_per_class": {
+        "Non-Demented": 0.925021701388889,
+        "Very Mildly Demented": 0.8629253360234891,
+        "Mildly Demented": 0.8257652594649418,
+        "Moderately Demented": 1.0
+      },
+      "roc_auc_ovr_macro": 0.9034280742193299,
+      "roc_auc_ovr_weighted": 0.9019555930864301,
+      "roc_auc_all_four_classes_valid": true,
+      "loss": 0.8939046224959486
+    },
+    "EfficientNetB0": {
+      "accuracy": 0.6857638888888888,
+      "precision_macro": 0.6963062025134562,
+      "recall_macro": 0.691743661692589,
+      "f1_macro": 0.6817216219077553,
+      "precision_weighted": 0.6836072272135573,
+      "recall_weighted": 0.6857638888888888,
+      "f1_weighted": 0.6715623690114225,
+      "macro_computed_over_classes": [
+        "Non-Demented",
+        "Very Mildly Demented",
+        "Mildly Demented",
+        "Moderately Demented"
+      ],
+      "per_class": {
+        "Non-Demented": {
+          "precision": 0.5848787446504993,
+          "recall": 0.8541666666666666,
+          "f1": 0.6943268416596104,
+          "support": 480
+        },
+        "Very Mildly Demented": {
+          "precision": 0.5217391304347826,
+          "recall": 0.3458980044345898,
+          "f1": 0.416,
+          "support": 451
+        },
+        "Mildly Demented": {
+          "precision": 0.6913946587537092,
+          "recall": 0.5669099756690997,
+          "f1": 0.6229946524064172,
+          "support": 411
+        },
+        "Moderately Demented": {
+          "precision": 0.9872122762148338,
+          "recall": 1.0,
+          "f1": 0.9935649935649936,
+          "support": 386
+        }
+      },
+      "confusion_matrix": [
+        [
+          410,
+          49,
+          21,
+          0
+        ],
+        [
+          208,
+          156,
+          83,
+          4
+        ],
+        [
+          83,
+          94,
+          233,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          386
+        ]
+      ],
+      "roc_auc_ovr_per_class": {
+        "Non-Demented": 0.9005408653846154,
+        "Very Mildly Demented": 0.8165357762355299,
+        "Mildly Demented": 0.8681771407774433,
+        "Moderately Demented": 1.0
+      },
+      "roc_auc_ovr_macro": 0.8963134455993972,
+      "roc_auc_ovr_weighted": 0.8931354486842411,
+      "roc_auc_all_four_classes_valid": true,
+      "loss": 0.6623352369081099
+    }
+  },
+  "test_metrics_other_model_for_transparency_only": {
+    "CNN_Baseline": {
+      "accuracy": 0.5978009259259259,
+      "f1_macro": 0.5469159013931243
+    }
+  },
+  "residual_phash_similarity_to_train": {
+    "val": {
+      "median_nearest_train_distance": 2.0,
+      "share_within_8_bits": 0.9942129629629629,
+      "share_within_12_bits": 1.0
+    },
+    "test": {
+      "median_nearest_train_distance": 2.0,
+      "share_within_8_bits": 0.9994212962962963,
+      "share_within_12_bits": 1.0
+    }
+  },
+  "disclaimer": "Research prototype for academic use only. Not a medical device and not clinically validated. Outputs must not be used for diagnosis or clinical decision-making. Class labels are inherited from a public dataset and the binary dementia grouping is not a clinical diagnostic definition."
+}

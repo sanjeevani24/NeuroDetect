@@ -1,0 +1,45 @@
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Patient / Evaluator
+    participant FE as React Frontend
+    participant API as FastAPI Backend
+    participant M4 as Model 4 (EfficientNetB0)
+    participant M1 as Model 1 (XGBoost)
+    participant M2 as Model 2 (PHQ-9/GAD-7)
+    participant M3 as Model 3 (Multimodal Speech)
+    participant DB as Supabase PostgreSQL
+
+    alt Pathway A: MRI-Only Analysis
+        User->>FE: Select "MRI Scan Analysis"
+        FE->>API: POST /api/assessments (type: MRI_ONLY)
+        API->>DB: INSERT assessments (type=MRI_ONLY)
+        User->>FE: Upload 2D Brain MRI Slice (PNG/JPEG)
+        FE->>API: POST /api/mri/analyze (assessment_id, image_file)
+        API->>M4: Preprocess (224x224x3) & Infer
+        M4-->>API: 4-Class Probabilities + Predicted Class
+        API->>DB: INSERT mri_assessments (probabilities, predicted_class)
+        API-->>FE: MRI Analysis Response
+        FE-->>User: Display MRI Prediction & Confidence Distribution
+    else Pathway B: Multimodal Cognitive Assessment
+        User->>FE: Select "Cognitive Assessment"
+        FE->>API: POST /api/assessments (type: COGNITIVE)
+        API->>DB: INSERT assessments (type=COGNITIVE)
+        User->>FE: Complete PHQ-9 & GAD-7 Questionnaires
+        FE->>M2: Calculate Severity Scores & Cutoffs (S >= 10)
+        User->>FE: Play 5 Cognitive Games
+        FE->>API: POST /api/games/submit (telemetry & timings)
+        API->>M1: Compute 47 Features & XGBoost Regression
+        M1-->>API: Cognitive Performance Score (0-100)
+        User->>FE: Record Boston Cookie Theft Description Audio
+        FE->>API: POST /api/speech/analyze (audio/webm blob)
+        API->>API: FFmpeg -> 16kHz PCM WAV
+        API->>M3: Wav2Vec2 + 42 Acoustic + DistilBERT -> Softmax
+        M3-->>API: Probabilities (HC, MCI, Dementia)
+        API->>API: Execute Rule-Based Fusion (50% Games, 50% Speech)
+        API->>API: Attach Mental Health Context Flags (from M2)
+        API->>DB: Store Results in cognitive_games, speech_assessments, model3_results
+        API-->>FE: Comprehensive Assessment Payload
+        FE-->>User: Display 3-tier Conclusion, Breakdown & Context
+    end
+```

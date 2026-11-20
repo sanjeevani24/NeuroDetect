@@ -12,8 +12,11 @@ import { MMSEGame } from "./games/mmse/MMSEGame";
 import { NBackGame } from "./games/nback/NBackGame";
 import { TrailMakingGame } from "./games/trail-making/TrailMakingGame";
 import { SpeechAssessment } from "./speech/SpeechAssessment";
+import { MriUploadScreen } from "./mri/MriUploadScreen";
+import { MriResultsScreen } from "./mri/MriResultsScreen";
 import {
   getAssessmentResults,
+  getMriResult,
   ApiError,
   completeMentalHealthScreening,
   createAssessmentSession,
@@ -25,6 +28,7 @@ import {
   type GAD7Answers,
   type MentalHealthCompletionResult,
   type Model3ResultSummary,
+  type MriResultResponse,
   type PHQ9Answers,
 } from "./services/api";
 
@@ -78,7 +82,7 @@ const RESPONSE_OPTIONS = [
 
 type Route =
   | { kind: "home" }
-  | { kind: "patient" }
+  | { kind: "patient"; pathway?: "cognitive" | "mri" }
   | { kind: "mental-health"; assessmentId: string }
   | { kind: "cognitive"; assessmentId: string }
   | { kind: "mmse"; assessmentId: string }
@@ -88,6 +92,8 @@ type Route =
   | { kind: "trail-making"; assessmentId: string }
   | { kind: "speech"; assessmentId: string }
   | { kind: "results"; assessmentId: string }
+  | { kind: "mri-upload"; assessmentId: string }
+  | { kind: "mri-results"; assessmentId: string }
   | { kind: "not-found" };
 
 type LoadStatus = "idle" | "loading" | "error";
@@ -104,7 +110,8 @@ interface HomeScreenProps {
   hasSavedAssessment: boolean;
   resumeStatus: "idle" | "loading";
   resumeError: string | null;
-  onStart: () => void;
+  onStartMri: () => void;
+  onStartCognitive: () => void;
   onResume: () => void;
   onStartNew: () => void;
 }
@@ -117,9 +124,11 @@ interface PatientFormValues {
 }
 
 interface PatientInformationScreenProps {
+  pathway?: "cognitive" | "mri";
   submitStatus: "idle" | "submitting";
   submitError: string | null;
-  onSubmit: (values: PatientFormValues) => Promise<void>;
+  onSubmit: (values: PatientFormValues, pathway: "cognitive" | "mri") => Promise<void>;
+  onCancel?: () => void;
 }
 
 interface MentalHealthScreenProps {
@@ -170,18 +179,25 @@ function formatAssessmentError(error: unknown, fallback: string): string {
   return fallback;
 }
 
-function parseRoute(pathname: string): Route {
+function parseRoute(pathname: string, search = window.location.search): Route {
   const trimmed = pathname.replace(/\/+$/, "") || "/";
   if (trimmed === "/") return { kind: "home" };
-  if (trimmed === "/patient") return { kind: "patient" };
+  if (trimmed === "/patient") {
+    const params = new URLSearchParams(search);
+    const pathway = params.get("pathway") === "mri" ? "mri" : "cognitive";
+    return { kind: "patient", pathway };
+  }
 
   const match = trimmed.match(
-    /^\/assessment\/([^/]+)\/(mental-health|cognitive|mmse|memory|nback|boston-naming|trail-making|speech|results)$/
+    /^\/assessment\/([^/]+)\/(mental-health|cognitive|mmse|memory|nback|boston-naming|trail-making|speech|results|mri|mri-upload|mri-results)$/
   );
   if (!match) return { kind: "not-found" };
 
   const assessmentId = decodeURIComponent(match[1]);
-  const section = match[2];
+  let section = match[2];
+  if (section === "mri") {
+    section = "mri-upload";
+  }
   return { kind: section as Route["kind"], assessmentId } as Route;
 }
 
@@ -190,7 +206,7 @@ function routeToPath(route: Route): string {
     case "home":
       return "/";
     case "patient":
-      return "/patient";
+      return route.pathway ? `/patient?pathway=${route.pathway}` : "/patient";
     case "mental-health":
     case "cognitive":
     case "mmse":
@@ -200,13 +216,26 @@ function routeToPath(route: Route): string {
     case "trail-making":
     case "speech":
     case "results":
+    case "mri-upload":
+    case "mri-results":
       return `/assessment/${encodeURIComponent(route.assessmentId)}/${route.kind}`;
     default:
       return "/";
   }
 }
 
-function routeForStage(stage: AssessmentSession["current_stage"], assessmentId: string): Route {
+function routeForStage(
+  stage: AssessmentSession["current_stage"],
+  assessmentId: string,
+  assessmentType: "COGNITIVE" | "MRI_ONLY" = "COGNITIVE"
+): Route {
+  if (assessmentType === "MRI_ONLY") {
+    if (stage === "RESULTS") {
+      return { kind: "mri-results", assessmentId };
+    }
+    return { kind: "mri-upload", assessmentId };
+  }
+
   switch (stage) {
     case "PHQ_GAD":
       return { kind: "mental-health", assessmentId };
@@ -226,8 +255,10 @@ function routeForStage(stage: AssessmentSession["current_stage"], assessmentId: 
       return { kind: "speech", assessmentId };
     case "RESULTS":
       return { kind: "results", assessmentId };
+    case "MRI":
+      return { kind: "mri-upload", assessmentId };
     default:
-      return { kind: "patient" };
+      return { kind: "patient", pathway: "cognitive" };
   }
 }
 
@@ -272,13 +303,26 @@ function getHeaderCopy(route: Route): { title: string; subtitle: string } {
   switch (route.kind) {
     case "home":
       return {
-        title: "Your memory and wellbeing check",
-        subtitle: "Simple questions. Clear instructions. One step at a time.",
+        title: "Clinical AI Evaluation Platform",
+        subtitle: "Independent diagnostic and cognitive assessment pathways.",
       };
     case "patient":
       return {
         title: "About you",
-        subtitle: "A few details before we begin.",
+        subtitle:
+          route.pathway === "mri"
+            ? "Participant details before the MRI scan analysis."
+            : "A few details before we begin the cognitive assessment.",
+      };
+    case "mri-upload":
+      return {
+        title: "Brain MRI Scan Analysis",
+        subtitle: "Upload an individual 2D brain MRI slice for classification.",
+      };
+    case "mri-results":
+      return {
+        title: "MRI Assessment Results",
+        subtitle: "Model 4 classification analysis and 4-class stage breakdown.",
       };
     case "mental-health":
       return {
@@ -334,39 +378,116 @@ function HomeScreen({
   hasSavedAssessment,
   resumeStatus,
   resumeError,
-  onStart,
+  onStartMri,
+  onStartCognitive,
   onResume,
   onStartNew,
 }: HomeScreenProps) {
   return (
     <div className="page-stack">
-      <section className="hero-card hero-card--landing">
-        <h2>Welcome. Let’s take it one step at a time.</h2>
-        <p className="hero-card__body">
-          Answer a few questions about how you feel, then try some memory and thinking activities. We’ll explain each activity before you begin.
-        </p>
-        <div className="hero-card__actions">
-          <PrimaryButton type="button" onClick={hasSavedAssessment ? onResume : onStart} disabled={resumeStatus === "loading"}>
-            {resumeStatus === "loading" ? "Opening your assessment…" : hasSavedAssessment ? "Continue my assessment" : "Let’s begin"}
-          </PrimaryButton>
-          {hasSavedAssessment ? (
+      {hasSavedAssessment && (
+        <section className="pathway-resume-banner" aria-label="Resume active assessment">
+          <div>
+            <strong style={{ display: "block", color: "var(--text)" }}>Assessment in progress</strong>
+            <span style={{ fontSize: "0.88rem", color: "var(--text-muted)" }}>
+              You have an active assessment session. You can resume where you left off or begin a new one.
+            </span>
+          </div>
+          <div className="pathway-resume-actions">
+            <PrimaryButton type="button" onClick={onResume} disabled={resumeStatus === "loading"}>
+              {resumeStatus === "loading" ? "Opening…" : "Resume Assessment"}
+            </PrimaryButton>
             <SecondaryButton type="button" onClick={onStartNew} disabled={resumeStatus === "loading"}>
-              Start a new assessment
+              Discard & Start New
             </SecondaryButton>
-          ) : null}
-        </div>
-        {resumeError ? <p className="inline-error">{resumeError}</p> : null}
-      </section>
+          </div>
+        </section>
+      )}
 
-      <p className="welcome-note">Find a quiet, comfortable place before you begin. This assessment is a screening tool and does not provide a diagnosis.</p>
+      {resumeError && <p className="inline-error" style={{ marginBottom: "16px" }}>{resumeError}</p>}
+
+      <div className="pathways-header">
+        <h2>Choose an Assessment Pathway</h2>
+        <p>
+          Select an assessment modality. Each pathway provides an independent evaluation using dedicated AI models.
+        </p>
+      </div>
+
+      <div className="pathways-grid">
+        {/* Card A: MRI Scan Analysis */}
+        <div className="pathway-card">
+          <div>
+            <span className="pathway-card__badge pathway-card__badge--mri">Pathway A · Deep Learning</span>
+            <h3 className="pathway-card__title">MRI Scan Analysis</h3>
+            <p className="pathway-card__desc">
+              Upload a brain MRI image for AI-based classification.
+            </p>
+            <ul className="pathway-card__features">
+              <li className="pathway-card__feature-item">
+                <span className="pathway-card__feature-bullet">&bull;</span>
+                <span>EfficientNetB0 deep neural network</span>
+              </li>
+              <li className="pathway-card__feature-item">
+                <span className="pathway-card__feature-bullet">&bull;</span>
+                <span>4-class dementia staging & binary grouping</span>
+              </li>
+              <li className="pathway-card__feature-item">
+                <span className="pathway-card__feature-bullet">&bull;</span>
+                <span>Individual 2D axial, coronal, or sagittal image slice</span>
+              </li>
+            </ul>
+          </div>
+          <div className="pathway-card__action">
+            <PrimaryButton type="button" onClick={onStartMri}>
+              Start MRI Assessment
+            </PrimaryButton>
+          </div>
+        </div>
+
+        {/* Card B: Cognitive Assessment */}
+        <div className="pathway-card">
+          <div>
+            <span className="pathway-card__badge pathway-card__badge--cog">Pathway B · Multimodal</span>
+            <h3 className="pathway-card__title">Cognitive Assessment</h3>
+            <p className="pathway-card__desc">
+              Complete cognitive games, mental-health questionnaires and speech analysis.
+            </p>
+            <ul className="pathway-card__features">
+              <li className="pathway-card__feature-item">
+                <span className="pathway-card__feature-bullet">&bull;</span>
+                <span>PHQ-9 & GAD-7 mental health screening (Model 2)</span>
+              </li>
+              <li className="pathway-card__feature-item">
+                <span className="pathway-card__feature-bullet">&bull;</span>
+                <span>5 interactive cognitive games with 47 features (Model 1)</span>
+              </li>
+              <li className="pathway-card__feature-item">
+                <span className="pathway-card__feature-bullet">&bull;</span>
+                <span>Cookie Theft speech assessment with faster-whisper (Model 3)</span>
+              </li>
+            </ul>
+          </div>
+          <div className="pathway-card__action">
+            <PrimaryButton type="button" onClick={onStartCognitive}>
+              Start Cognitive Assessment
+            </PrimaryButton>
+          </div>
+        </div>
+      </div>
+
+      <p className="welcome-note">
+        Research prototype for academic use only. Not a medical device and not clinically validated. Outputs must not be used for diagnosis or clinical decision-making.
+      </p>
     </div>
   );
 }
 
 function PatientInformationScreen({
+  pathway = "cognitive",
   submitStatus,
   submitError,
   onSubmit,
+  onCancel,
 }: PatientInformationScreenProps) {
   const [values, setValues] = useState<PatientFormValues>({
     full_name: "",
@@ -396,15 +517,23 @@ function PatientInformationScreen({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!validate()) return;
-    await onSubmit(values);
+    await onSubmit(values, pathway);
   }
 
   return (
     <section className="form-card">
       <div className="form-card__intro">
-        <h2>A little about you</h2>
+        <span
+          className={`pathway-card__badge ${pathway === "mri" ? "pathway-card__badge--mri" : "pathway-card__badge--cog"}`}
+          style={{ marginBottom: "12px" }}
+        >
+          {pathway === "mri" ? "Pathway A · MRI Scan Analysis" : "Pathway B · Cognitive Assessment"}
+        </span>
+        <h2>Participant Information</h2>
         <p className="hero-card__body">
-          Please fill in all four fields, then choose Continue.
+          {pathway === "mri"
+            ? "Please enter participant details before uploading the MRI image slice."
+            : "Please fill in all four fields, then choose Continue."}
         </p>
       </div>
       <form className="form-grid" onSubmit={(event) => void handleSubmit(event)}>
@@ -454,8 +583,13 @@ function PatientInformationScreen({
         {submitError ? <p className="inline-error">{submitError}</p> : null}
 
         <div className="form-actions">
+          {onCancel && (
+            <SecondaryButton type="button" onClick={onCancel} disabled={submitStatus === "submitting"}>
+              Back
+            </SecondaryButton>
+          )}
           <PrimaryButton type="submit" disabled={submitStatus === "submitting"}>
-            {submitStatus === "submitting" ? "Getting ready…" : "Continue"}
+            {submitStatus === "submitting" ? "Getting ready…" : pathway === "mri" ? "Continue to MRI Upload" : "Continue"}
           </PrimaryButton>
         </div>
       </form>
@@ -1247,6 +1381,10 @@ function App() {
   const [resultsStatus, setResultsStatus] = useState<LoadStatus>("idle");
   const [resultsError, setResultsError] = useState<string | null>(null);
   const [resultsData, setResultsData] = useState<AssessmentResults | null>(null);
+  const [mriResult, setMriResult] = useState<MriResultResponse | null>(null);
+  const [mriPreviewUrl, setMriPreviewUrl] = useState<string | null>(null);
+  const [mriStatus, setMriStatus] = useState<LoadStatus>("idle");
+  const [mriError, setMriError] = useState<string | null>(null);
 
   const headerCopy = getHeaderCopy(route);
   const completedTopStages = normalizeCompletedStages(session);
@@ -1282,6 +1420,10 @@ function App() {
     setResultsStatus("idle");
     setResultsError(null);
     setResultsData(null);
+    setMriResult(null);
+    setMriPreviewUrl(null);
+    setMriStatus("idle");
+    setMriError(null);
   }
 
   useEffect(() => {
@@ -1324,19 +1466,48 @@ function App() {
       });
   }, [route]);
 
-  async function handleCreateSession(values: PatientFormValues) {
+  useEffect(() => {
+    if (route.kind !== "mri-results") return;
+    if (mriResult && mriResult.assessment_id === route.assessmentId) return;
+
+    setMriStatus("loading");
+    setMriError(null);
+    void getMriResult(route.assessmentId)
+      .then((res) => {
+        setMriResult(res);
+        setMriStatus("idle");
+      })
+      .catch((err) => {
+        // If no MRI slice has been uploaded yet, smoothly navigate to mri-upload rather than showing a fatal error
+        if (err instanceof ApiError && err.status === 404 && String(err.detail).includes("MRI assessment result not found")) {
+          setMriStatus("idle");
+          navigate({ kind: "mri-upload", assessmentId: route.assessmentId }, true);
+          return;
+        }
+        setMriStatus("error");
+        setMriError(formatAssessmentError(err, "Unable to load MRI assessment results."));
+      });
+  }, [route, mriResult]);
+
+  async function handleCreateSession(values: PatientFormValues, pathway: "cognitive" | "mri" = "cognitive") {
     setCreateStatus("submitting");
     setCreateError(null);
     try {
+      const assessmentType = pathway === "mri" ? "MRI_ONLY" : "COGNITIVE";
       const nextSession = await createAssessmentSession({
         full_name: values.full_name.trim(),
         age: Number(values.age),
         sex: values.sex.trim(),
         education_years: Number(values.education_years),
+        assessment_type: assessmentType,
       });
       setSession(nextSession);
       window.localStorage.setItem(SESSION_STORAGE_KEY, nextSession.assessment_id);
-      navigate({ kind: "mental-health", assessmentId: nextSession.assessment_id });
+      if (pathway === "mri") {
+        navigate({ kind: "mri-upload", assessmentId: nextSession.assessment_id });
+      } else {
+        navigate({ kind: "mental-health", assessmentId: nextSession.assessment_id });
+      }
     } catch (error) {
       setCreateError(error instanceof ApiError ? String(error.detail ?? error.message) : "Unable to create assessment.");
     } finally {
@@ -1351,7 +1522,8 @@ function App() {
     setResumeError(null);
     try {
       const nextSession = await loadSession(storedAssessmentId);
-      navigate(routeForStage(nextSession.current_stage, nextSession.assessment_id));
+      const pathway = nextSession.assessment_type === "MRI_ONLY" ? "MRI_ONLY" : "COGNITIVE";
+      navigate(routeForStage(nextSession.current_stage, nextSession.assessment_id, pathway));
     } catch (error) {
       clearAssessmentSession();
       setResumeError(error instanceof ApiError ? String(error.detail ?? error.message) : "Unable to resume assessment.");
@@ -1403,9 +1575,9 @@ function App() {
     }
   }
 
-  function startNewAssessment() {
+  function startNewAssessment(pathway: "cognitive" | "mri" = "cognitive") {
     clearAssessmentSession();
-    navigate({ kind: "patient" });
+    navigate({ kind: "patient", pathway });
   }
 
   function resumeCognitiveAssessment() {
@@ -1484,17 +1656,65 @@ function App() {
             hasSavedAssessment={Boolean(window.localStorage.getItem(SESSION_STORAGE_KEY))}
             resumeStatus={resumeStatus}
             resumeError={resumeError}
-            onStart={() => navigate({ kind: "patient" })}
+            onStartMri={() => navigate({ kind: "patient", pathway: "mri" })}
+            onStartCognitive={() => navigate({ kind: "patient", pathway: "cognitive" })}
             onResume={() => void handleResumeAssessment()}
-            onStartNew={startNewAssessment}
+            onStartNew={() => startNewAssessment("cognitive")}
           />
         );
       case "patient":
         return (
           <PatientInformationScreen
+            pathway={route.pathway ?? "cognitive"}
             submitStatus={createStatus}
             submitError={createError}
             onSubmit={handleCreateSession}
+            onCancel={() => navigate({ kind: "home" })}
+          />
+        );
+      case "mri-upload":
+        return (
+          <MriUploadScreen
+            assessmentId={route.assessmentId}
+            patientName={session?.full_name}
+            onUploadSuccess={(result, previewUrl) => {
+              setMriResult(result);
+              setMriPreviewUrl(previewUrl);
+              navigate({ kind: "mri-results", assessmentId: route.assessmentId });
+            }}
+            onCancel={() => navigate({ kind: "home" })}
+          />
+        );
+      case "mri-results":
+        if (mriStatus === "loading") {
+          return (
+            <LoadingState
+              title="Loading MRI results"
+              message="Please wait while we retrieve the Model 4 analysis."
+            />
+          );
+        }
+        if (mriStatus === "error" || !mriResult) {
+          return (
+            <ErrorState
+              title="Unable to load MRI results"
+              message={mriError ?? "No MRI scan analysis found for this assessment."}
+              action={
+                <PrimaryButton type="button" onClick={() => navigate({ kind: "home" }, true)}>
+                  Return Home
+                </PrimaryButton>
+              }
+            />
+          );
+        }
+        return (
+          <MriResultsScreen
+            result={mriResult}
+            previewUrl={mriPreviewUrl}
+            onStartNewAssessment={() => {
+              clearAssessmentSession();
+              navigate({ kind: "home" });
+            }}
           />
         );
       case "mental-health":
@@ -1511,7 +1731,7 @@ function App() {
           <CognitiveOverviewScreen
             session={session}
             onResume={resumeCognitiveAssessment}
-            onStartNew={startNewAssessment}
+            onStartNew={() => startNewAssessment("cognitive")}
           />
         ) : null;
       case "mmse":
@@ -1573,6 +1793,10 @@ function App() {
     resultsData,
     resultsStatus,
     resultsError,
+    mriResult,
+    mriPreviewUrl,
+    mriStatus,
+    mriError,
   ]);
 
   return (
@@ -1584,7 +1808,13 @@ function App() {
           subtitle={headerCopy.subtitle}
           currentStage={getTopLevelCurrentStage(route)}
           completedStages={completedTopStages}
-          showProgress={route.kind !== "home" && route.kind !== "patient" && route.kind !== "not-found"}
+          showProgress={
+            route.kind !== "home" &&
+            route.kind !== "patient" &&
+            route.kind !== "not-found" &&
+            route.kind !== "mri-upload" &&
+            route.kind !== "mri-results"
+          }
         />
       }
     >

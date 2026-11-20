@@ -1,0 +1,32 @@
+```mermaid
+flowchart LR
+    subgraph AudioInput ["Raw Speech Input"]
+        Mic["Microphone Audio"] --> WAV["16kHz PCM Mono WAV"]
+    end
+
+    subgraph Branch1 ["Branch 1: Wav2Vec2 Audio Embeddings"]
+        WAV --> W2V["Wav2Vec2-XLSR-53 / Base"]
+        W2V --> Pool["Temporal Mean Pooling"]
+        Pool --> EmbW["768-dimensional Audio Vector"]
+    end
+
+    subgraph Branch2 ["Branch 2: Handcrafted Acoustic Analysis"]
+        WAV --> PyAcoustic["Acoustic Feature Extractor (librosa / eGeMAPS)"]
+        PyAcoustic --> Feat42["42 Acoustic Features (Pitch, Jitter, Shimmer, HNR, Formants, Energy)"]
+    end
+
+    subgraph Branch3 ["Branch 3: Semantic Transcript Embeddings"]
+        WAV --> Whisper["Faster-Whisper Local ASR"]
+        Whisper --> Text["Transcribed Text"]
+        Text --> BERT["DistilBERT-base-uncased"]
+        BERT --> EmbT["768-dimensional Semantic Vector"]
+    end
+
+    subgraph MultimodalFusion ["Multimodal Decision Fusion"]
+        EmbW --> Concat["Multimodal Feature Vector / Logit Concatenation"]
+        Feat42 --> Concat
+        EmbT --> Concat
+        Concat --> LR["Calibrated Logistic Regression / Softmax Classifier"]
+        LR --> Probs["Class Probabilities:\nP(HC), P(MCI), P(Dementia)"]
+    end
+```

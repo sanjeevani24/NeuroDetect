@@ -1,0 +1,25 @@
+```mermaid
+flowchart TD
+    Start["Cognitive Assessment Inputs"] --> M1Check{"Model 1 Cognitive Score\n(0-100)"}
+    Start --> M3Check{"Model 3 Leading Prediction\n(HC, MCI, Dementia)"}
+    Start --> M2Check{"Model 2 Mental Health\n(PHQ-9 >= 10 OR GAD-7 >= 10)"}
+
+    M1Check -->|Score >= 75| M1_Norm["M1: NORMAL"]
+    M1Check -->|60 <= Score < 75| M1_Bord["M1: BORDERLINE"]
+    M1Check -->|Score < 60| M1_Low["M1: LOW"]
+
+    M1_Norm & M1_Bord --> PairHC{"M3 == HC?"}
+    PairHC -->|Yes| Conc1["NO_ELEVATED_INDICATORS\n'No Elevated Indicators Detected'"]
+    PairHC -->|No (MCI or Dementia)| Conc2["FURTHER_ASSESSMENT\n'Further Assessment Recommended'"]
+
+    M1_Low --> PairLow{"M3 Prediction?"}
+    PairLow -->|HC| Conc2
+    PairLow -->|MCI| Conc3["ELEVATED_COGNITIVE_INDICATORS\n'Elevated Cognitive Indicators'"]
+    PairLow -->|Dementia| Conc3
+
+    M2Check -->|Yes| Flag["Contextual Warning:\n'Elevated depression/anxiety scores detected.\nDepressive pseudodementia may confound cognitive results.'"]
+    M2Check -->|No| NoFlag["No Mental Health Confound"]
+
+    Conc1 & Conc2 & Conc3 --> FinalReport["Final Results Dashboard\n(Conclusion + Contextual Flags + Breakdown)"]
+    Flag & NoFlag --> FinalReport
+```

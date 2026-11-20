@@ -1,0 +1,142 @@
+{
+  "model_name": "NeuroDetect-MRI-EfficientNetB0",
+  "model_version": "1.0.0",
+  "project": "NeuroDetect - Model 4 (MRI-based Alzheimer's stage classification)",
+  "architecture": {
+    "selected": "EfficientNetB0",
+    "parameters": 4054695,
+    "input_shape": [
+      null,
+      224,
+      224,
+      3
+    ],
+    "output": "softmax over 4 classes",
+    "normalisation": "INSIDE the model: Rescaling(1/255) for the CNN; EfficientNetB0 built-in preprocessing",
+    "gradcam_layer": "top_activation",
+    "efficientnet": {
+      "weights": "imagenet",
+      "fine_tuned_weights_kept": true,
+      "unfrozen_top_layers": 30
+    }
+  },
+  "preprocessing": {
+    "color_conversion": "convert to 3-channel RGB (grayscale replicated)",
+    "resize": [
+      224,
+      224
+    ],
+    "interpolation": "bilinear (PIL)",
+    "input_dtype_to_model": "float32 raw pixel values in [0, 255]",
+    "external_normalisation_required": false,
+    "implementation": "load_and_preprocess_image() in inference_example.py (identical to the training pipeline)"
+  },
+  "augmentation_training_only": {
+    "rotation_deg": 5,
+    "translation_fraction": 0.04,
+    "zoom_fraction": 0.08,
+    "brightness": 0.05,
+    "contrast": 0.1,
+    "fill": "constant black",
+    "flips": false
+  },
+  "class_indices": {
+    "Non-Demented": 0,
+    "Very Mildly Demented": 1,
+    "Mildly Demented": 2,
+    "Moderately Demented": 3
+  },
+  "dataset_folder_name_to_canonical_label": {
+    "Mild Impairment": "Mildly Demented",
+    "Moderate Impairment": "Moderately Demented",
+    "No Impairment": "Non-Demented",
+    "Very Mild Impairment": "Very Mildly Demented"
+  },
+  "binary_grouping": {
+    "No Dementia": [
+      "Non-Demented"
+    ],
+    "Dementia": [
+      "Very Mildly Demented",
+      "Mildly Demented",
+      "Moderately Demented"
+    ],
+    "note": "inherits dataset labels; not a clinically validated definition"
+  },
+  "training": {
+    "seed": 42,
+    "batch_size": 32,
+    "optimizer": "Adam",
+    "loss": "sparse_categorical_crossentropy",
+    "class_weights": null,
+    "hyperparameters": {
+      "SEED": 42,
+      "USE_GOOGLE_DRIVE": true,
+      "DRIVE_SUBDIR": "NeuroDetect",
+      "OUTPUT_DIR_NAME": "neurodetect_mri_model",
+      "COLAB_DOWNLOAD_ZIP": true,
+      "SPLIT_RATIOS": [
+        0.7,
+        0.15,
+        0.15
+      ],
+      "PHASH_THRESHOLD": 4,
+      "MAX_GROUP_FRACTION": 0.05,
+      "SUBJECT_ID_MIN_COVERAGE": 0.95,
+      "IMG_SIZE": 224,
+      "BATCH_SIZE": null,
+      "AUG_ROTATION_DEG": 5,
+      "AUG_TRANSLATION": 0.04,
+      "AUG_ZOOM": 0.08,
+      "AUG_BRIGHTNESS": 0.05,
+      "AUG_CONTRAST": 0.1,
+      "CNN_EPOCHS": 40,
+      "CNN_LR": 0.001,
+      "CNN_DROPOUT": 0.4,
+      "EFFNET_WEIGHTS": "imagenet",
+      "EFF_DROPOUT": 0.3,
+      "EFF_HEAD_EPOCHS": 15,
+      "EFF_HEAD_LR": 0.001,
+      "EFF_FT_EPOCHS": 20,
+      "EFF_FT_LR": 1e-05,
+      "EFF_UNFREEZE_LAYERS": 30,
+      "EARLY_STOP_PATIENCE": 6,
+      "REDUCE_LR_PATIENCE": 3,
+      "REDUCE_LR_FACTOR": 0.5,
+      "CLASS_WEIGHT_IMBALANCE_RATIO": 1.5,
+      "N_BOOTSTRAP": 1000,
+      "GRADCAM_PER_CLASS": 3,
+      "MODEL_VERSION": "1.0.0"
+    }
+  },
+  "data": {
+    "source": "lukechugh/best-alzheimer-mri-dataset-99-accuracy",
+    "n_images_used": 11519,
+    "split_counts": {
+      "train": 8063,
+      "val": 1728,
+      "test": 1728
+    },
+    "split_ratios_target": [
+      0.7,
+      0.15,
+      0.15
+    ],
+    "phash_threshold_used": 1
+  },
+  "leakage_control": {
+    "status": "GROUP_LEVEL_SPLIT_NO_SUBJECT_IDS",
+    "subject_ids_available": false,
+    "split_unit": "exact/near-duplicate group",
+    "warnings": []
+  },
+  "evaluation_level": "image-level",
+  "environment": {
+    "python": "3.13.16",
+    "tensorflow": "2.21.0",
+    "keras": "3.13.2",
+    "numpy": "2.4.6",
+    "scikit_learn": "1.6.1"
+  },
+  "disclaimer": "Research prototype for academic use only. Not a medical device and not clinically validated. Outputs must not be used for diagnosis or clinical decision-making. Class labels are inherited from a public dataset and the binary dementia grouping is not a clinical diagnostic definition."
+}

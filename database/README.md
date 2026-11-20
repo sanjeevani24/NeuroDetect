@@ -12,6 +12,7 @@ NeuroDetect uses shared assessment tables plus per-game result storage:
 - `trail_making_events`
 - `speech_assessments`
 - `model3_results`
+- `mri_assessments`
 
 ## Setup
 
@@ -19,6 +20,21 @@ NeuroDetect uses shared assessment tables plus per-game result storage:
 2. Run `schema.sql`.
 3. If your project was built incrementally, also run any missing per-game SQL files in this folder.
 4. Copy your project URL and **service role key** into the backend `.env`.
+
+## MRI Assessment & Model 4 Migration
+
+To enable the MRI Assessment pathway in Supabase, run:
+
+```bash
+# Execute in Supabase SQL Editor:
+database/mri_schema.sql
+```
+
+This migration:
+- Adds `assessment_type` (`COGNITIVE` or `MRI_ONLY`) to `assessments`.
+- Creates `mri_assessments` referencing `assessments(assessment_id)`.
+- Enforces Row Level Security (RLS) with backend-only service-role access.
+- Non-destructively preserves all existing patient and cognitive assessment data.
 
 ## Speech Assessment & Model 3 Migration
 
