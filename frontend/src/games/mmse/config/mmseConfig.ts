@@ -8,6 +8,13 @@ export const ORIENTATION_QUESTIONS = [
 
 export const REGISTRATION_WORDS = ["APPLE", "TABLE", "COIN"] as const;
 
+export const SERIAL7_CONFIG = {
+  startValue: 100,
+  step: 7,
+  totalAttempts: 5,
+  questionIds: ["serial7_1", "serial7_2", "serial7_3", "serial7_4", "serial7_5"] as const,
+};
+
 export const SERIAL7_SEQUENCE = [
   { id: "serial7_1", prompt: "100 minus 7", expectedAnswer: "93" },
   { id: "serial7_2", prompt: "93 minus 7", expectedAnswer: "86" },

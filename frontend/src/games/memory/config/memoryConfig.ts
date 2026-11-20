@@ -16,6 +16,7 @@ export const RECOGNITION_DISTRACTOR_COUNT = RECOGNITION_TRIAL_COUNT - TARGET_ITE
 export const DISTRACTOR_CONFIG = {
   startValue: 100,
   step: 3,
+  maxAttempts: 5,
   prompt: "Count backwards from 100 by 3s.",
 };
 
